@@ -1,168 +1,121 @@
 # Cocapn Vessel Room Navigator 🚢
 
-**Your boat as a navigable 3D web space** — ScummVM meets Google Street View for a fishing vessel.
+**Your boat as a navigable 3D web space.**  
+ScummVM meets Google Street View for a fishing vessel. Walk between rooms, warp instantly, monitor cameras, read gauges, respond to alarms, and design mockups — all in your browser.
 
-Each physical space on the vessel is a "room" — a 3D panoramic webpage. Walk between rooms, warp instantly to any space, monitor cameras, read dashboards, and respond to alarms. Composite rooms mix features from physical rooms into custom displays.
+**[→ Launch the Navigator](https://superinstance.github.io/vessel-room-navigator/)**
+
+---
+
+## What It Is
+
+Every physical space on the vessel is a "room" — a 360° panoramic webpage. The room system is the UI. No menus, no abstractions. The boat IS the interface.
+
+| You can | How |
+|---------|-----|
+| **Look around** | Drag or touch. 360° interior spheres. |
+| **Walk rooms** | Click doors in the panel. Smooth transitions. |
+| **Warp instantly** | Teleport to any room. ⚡ buttons or keys 1-9. |
+| **Monitor cameras** | PTZ, thermal, radar feeds in corner viewports. |
+| **Check gauges** | Live dashboards: RPM, temps, fuel, nav data. |
+| **Respond to alarms** | Trigger test alarms → click to auto-warp. |
+| **Design mockups** | 🎨 panel: "add a winch" or "show fire" → 3D objects. |
+| **Chat with agent** | 💬 panel: type commands, get responses. |
+| **Use on any device** | Desktop, tablet, phone — responsive. |
+
+---
+
+## Rooms
+
+| Room | Type | What's There |
+|------|------|-------------|
+| 🚪 **Wheelhouse** | Physical | Engine dash, radar, nav display, compass |
+| 🚪 **Galley** | Physical | Warm kitchen, porthole view |
+| 🚪 **Foredeck** | Physical | Bow camera, open ocean horizon |
+| 🚪 **Aft Cockpit** | Physical | Stern cam, simplified nav display |
+| 🚪 **Engine Room** | Physical | 4 thermal cameras, gauge monitor |
+| 🚪 **Wheelhouse Roof** | Physical | 360° panorama, radar antenna |
+| 🚪 **Crow's Nest** | Physical | PTZ gunnery station, horizon scan |
+| 🖥️ **Alarm Center** | Virtual | Composite alert monitoring |
+| 🧩 **4-Camera Wall** | Composite | Multi-angle display grid |
+
+---
+
+## Design Philosophy
+
+**Rooms make tiny models smart.** The room structure encodes the intelligence. Cameras, sensors, thresholds, adjacencies — each room defines what's possible and relevant. An ESP32 agent following room constraints outperforms a 70B-parameter model without structure. (See [research/](research/) for the full analysis.)
+
+### Architecture
+
+```
+┌──────────────────────────────────────────┐
+│            Browser (Three.js)             │
+│  Panorama spheres • Viz engine • Chat    │
+├──────────────────────────────────────────┤
+│         ESP32 Agents (camera IS agent)   │
+│  PTZ servos • Motion detection • ESP-NOW │
+├──────────────────────────────────────────┤
+│         GPU Vector DB (modular)          │
+│  WebGPU • CUDA • Metal • Vulkan • WASM   │
+├──────────────────────────────────────────┤
+│              PLATO Knowledge             │
+│  Tiles • Lessons • Agent memory          │
+└──────────────────────────────────────────┘
+```
+
+---
 
 ## Quick Start
 
 ```bash
 # Serve locally
 python3 -m http.server 8888
-# Open http://localhost:8888 in a browser
+# → http://localhost:8888
+
+# Or just open index.html in any browser
 ```
 
-Or open `index.html` directly (most browsers support local file://).
+### Controls
 
-## Navigation
+| Key | Action |
+|-----|--------|
+| Drag mouse | Look around |
+| WASD / Arrow keys | Quick direction |
+| 1-9 | Warp to room number |
+| Side panel ☰ | Walk, warp, cameras, alarms |
+| 🎨 button | Open design panel |
+| 💬 button | Open chat with agent |
 
-| Action | Desktop | Mobile |
-|--------|---------|--------|
-| **Look around** | Drag mouse | Touch drag |
-| **Walk to room** | Click wall/door | Tap wall |
-| **Quick look direction** | WASD or Arrow keys | Compass buttons |
-| **Warp teleport** | Click ⚡ button in side panel | Side panel |
-| **Warp by number** | Keys 1-9 | Side panel |
-| **Open panel** | ☰ button | ☰ button |
+---
 
-## Rooms
+## Research Library
 
-| Room | Type | Description |
-|------|------|-------------|
-| 🚪 Wheelhouse | physical | Navigation & engine controls |
-| 🚪 Galley | physical | Mess & cooking area |
-| 🚪 Foredeck | physical | Forward exterior deck |
-| 🚪 Aft Cockpit | physical | Work deck & hauling |
-| 🚪 Engine Room | physical | Main power & thermal cams |
-| 🚪 Wheelhouse Roof | physical | Overhead panorama |
-| 🚪 Crow's Nest | physical | Mast lookout, PTZ gunnery |
-| 🖥️ Alarm Center | virtual | Composite alarm board |
-| 🧩 4-Camera Wall | composite | 2×2 grid of most useful cams |
+11 documents, ~32,000 words. All in [research/](research/):
 
-## Architecture
+| Doc | Focus | Key Insight |
+|-----|-------|-------------|
+| [Design Synthesis](research/vessel-room-navigation-design.md) | Full architecture | 9 room types, navigation semantics, alarm routing |
+| [Camera Architecture](research/camera-architecture-for-vessel-rooms.md) | 5 cam types × 5 modes | Sensor fusion, PTZ API, offline degradation |
+| [Topology Analysis](research/vessel-room-topology-analysis.md) | Formal graph theory | Laman rigidity E=14<15, add F↔ER edge |
+| [Room Graph Theory](research/room-graph-brainstorm.md) | LOD, caching, federation | 3-tier bandwidth, room inheritance |
+| [Archeology](research/vessel-room-archeology.md) | 1986→1996→2006→2036→2046 | 1986 clipboard was genius — digital must match |
+| [UX Flows](research/vessel-room-ux-flows.md) | Human + agent patterns | 3-second alarm rule, glance/stare model |
+| [ESP32 Agent](research/vessel-room-esp32-agent.md) | Camera IS the agent | JSON/WebSocket, ESP-NOW mesh, 10μA deep sleep |
+| [Viz Engine](research/vessel-room-visualization-engine.md) | Prompt → 3D mockups | Scene compiler, primitives library, simulation timeline |
+| [GPU Vector DB](research/vessel-room-gpu-vectordb.md) | Modular compute layer | CUDA/WebGPU/Vulkan/Metal/WASM backends, auto-detect |
+| [Rooms Make Models Smart](research/rooms-make-models-smart.md) | Constraint theory | Room structure > model size. ESP32 beats 70B LLM. |
+| [INDEX](research/vessel-room-navigation-INDEX.md) | Master index | 32K words mapped across 9 documents |
 
-```
-vessel-room-navigator/
-├── index.html          # Single-file prototype (Three.js viewer)
-├── rooms-config.json   # Room graph & camera definitions
-├── docs/
-│   └── index.html      # Same viewer, for GH Pages
-└── README.md           # This file
-```
+---
 
-### Data Model
+## Live Demo
 
-Each room is defined in `rooms-config.json`:
+**https://superinstance.github.io/vessel-room-navigator/**
 
-```json
-{
-  "wheelhouse": {
-    "name": "Wheelhouse",
-    "type": "physical",
-    "adjacent": ["galley", "wheelhouse_roof", "engine_room"],
-    "warp": ["crow_nest", "foredeck", "aft_cockpit"],
-    "directions": {
-      "fore": {"label": "Forward Window", "camera": "wheelhouse_fwd"},
-      "port": {"label": "Port Window", "camera": "wheelhouse_port"}
-    },
-    "cameras": [...],
-    "overlays": [...]
-  }
-}
-```
+Open in any modern browser. Click, drag, warp, design. No install, no server.
 
-### Room Types
-
-1. **Physical** — maps 1:1 to a vessel space. Has directions, cameras, adjacency.
-2. **Virtual** — software-only space (e.g., alarm center, radio room).
-3. **Composite** — aggregates features from physical rooms (e.g., 4-camera wall).
-
-### Key Concepts
-
-- **Rooms are first-class web pages** — each is a URL/bookmarkable
-- **Warp is default fast-travel** — instant teleport, no walking animation
-- **Compositing is a room type** — not bolted onto physical rooms
-- **Cameras are room objects** — a room has cameras, not the other way around
-- **Alarms trigger warps** — system routes you to the right room automatically
-
-## Camera System
-
-Cameras are named objects within rooms:
-
-| Feature | Description |
-|---------|-------------|
-| **PTZ** | Pan/tilt/zoom, interactive controls |
-| **Thermal** | Engine monitoring, temp reading |
-| **Dashboard** | Gauge overlay, real-time data |
-| **Quilted** | Multi-camera 360° stitch |
-| **Composite** | Feed from another room's camera |
-
-### Crow's Nest Gunnery Mode
-
-The crow's nest PTZ camera supports a "gunnery" mode:
-- Click-drag to aim
-- Zoom +/Zoom - buttons
-- 🎯 Acquire button (future: auto-track target)
-- Reticle overlay on camera feed
-
-## Dashboard Overlays
-
-Each room can have data overlays:
-
-- **Engine Dashboard** — RPM, fuel, temp, trim (bottom overlay in wheelhouse)
-- **Nav Display** — heading, speed, depth, wind (top overlay)
-- **Engine Monitor** — per-engine temps, exhaust, oil pressure (right overlay)
-- **Simplified Nav** — large-font readout for back deck visibility
-
-## Alarm System
-
-- Select a room from the dropdown, click 🚨 TRIGGER ALARM
-- Alarm notification pulses at top of screen
-- Click notification to **auto-warp** to the alarmed room
-- Alarm board room shows all alerts in one composite view
-
-## Warp System
-
-| Trigger | Behavior |
-|---------|----------|
-| Manual click | Instant teleport via ⚡ button |
-| Alarm | Auto-warps to problem room on click |
-| Number key | Keys 1-9 warp to rooms in order |
-| All rooms list | Click any room name |
-
-## Planned Phases
-
-### Phase 2 — Live Camera Feeds
-- RTSP/RTMP → WebRTC transcoding pipeline
-- Real MJPG snapshots from physical cameras
-- FFmpeg-based stream relay
-
-### Phase 3 — Real Data Integration
-- NMEA 2000 gauge data (RPM, fuel, temp real values)
-- AIS overlay on compass/camera views
-- GPS position via WebSocket
-
-### Phase 4 — Fleet Deployment
-- Camera presets per room
-- Voice command integration ("go to crow's nest")
-- Multi-vessel support
-- Remote access from shore
-
-## Design Principles
-
-1. **Boat IS the UI** — no abstract menus, rooms are real spaces
-2. **Warp is instant** — no loading screens, sub-200ms transitions
-3. **Cameras are room features** — a room has cameras, not the other way around
-4. **Composites are rooms** — not lego blocks, first-class entities
-5. **Alarms route you** — system takes you where you need to be
-
-## Tech Stack
-
-- **Three.js** — 3D rendering (CDN, no build step)
-- **CSS2DRenderer** — labels and overlays
-- **Modular JS** — ES modules, importmap
-- **No build step** — open in any browser
+---
 
 ## License
 
-Cocapn — Keeper fleet infrastructure
+Cocapn — Keeper fleet infrastructure.
