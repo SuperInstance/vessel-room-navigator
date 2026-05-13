@@ -2,832 +2,584 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cocapn Vessel Room Navigator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Cocapn Vessel Room Navigator + Viz Engine</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #050510; overflow: hidden; font-family: 'SF Pro Display', 'Segoe UI', system-ui, sans-serif; color: #fff; user-select: none; }
-  
-  #canvas-container { width: 100vw; height: 100vh; display: block; position: fixed; top: 0; left: 0; }
-  
-  /* HUD */
-  #hud { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-  #hud > * { pointer-events: auto; }
-  
-  #room-title {
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(5,5,16,0.8); padding: 12px 28px; border-radius: 12px;
-    font-size: 18px; font-weight: 700; letter-spacing: 1px;
-    border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(20px);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-    display: flex; align-items: center; gap: 10px;
-  }
-  #room-title .type-badge {
-    padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  #room-title .type-badge.physical { background: rgba(76,175,80,0.2); color: #69f0ae; border: 1px solid rgba(76,175,80,0.3); }
-  #room-title .type-badge.virtual { background: rgba(33,150,243,0.2); color: #82b1ff; border: 1px solid rgba(33,150,243,0.3); }
-  #room-title .type-badge.composite { background: rgba(255,152,0,0.2); color: #ffd54f; border: 1px solid rgba(255,152,0,0.3); }
-  
-  /* Loading spinner */
-  #loading {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-    z-index: 100; text-align: center;
-  }
-  #loading .spinner {
-    width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.1);
-    border-top: 3px solid #64b4ff; border-radius: 50%;
-    animation: spin 1s linear infinite; margin: 0 auto 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { font-size: 13px; color: rgba(255,255,255,0.5); }
-  #loading.hidden { display: none; }
-  
-  /* Compass */
-  #compass {
-    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 3px; background: rgba(5,5,16,0.75); 
-    padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(16px); box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  }
-  #compass button {
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.6); padding: 8px 14px; border-radius: 6px; cursor: pointer;
-    font-size: 10px; font-weight: 600; transition: all 0.2s;
-    text-transform: uppercase; letter-spacing: 0.8px;
-  }
-  #compass button:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
-  #compass button.active { background: rgba(100,180,255,0.2); border-color: #64b4ff; color: #64b4ff; box-shadow: 0 0 12px rgba(100,180,255,0.15); }
-  
-  /* Side panel */
-  #side-panel {
-    position: fixed; right: 0; top: 0; height: 100%; width: 290px;
-    background: rgba(5,5,16,0.92); backdrop-filter: blur(24px);
-    border-left: 1px solid rgba(255,255,255,0.06);
-    padding: 90px 16px 20px; overflow-y: auto; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-    transform: translateX(0); z-index: 15;
-  }
-  #side-panel.hidden { transform: translateX(100%); }
-  #side-panel::-webkit-scrollbar { width: 3px; }
-  #side-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-  
-  #toggle-panel {
-    position: fixed; right: 12px; top: 20px; z-index: 20;
-    background: rgba(5,5,16,0.8); border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px; cursor: pointer;
-    font-size: 18px; backdrop-filter: blur(16px);
-    transition: all 0.2s;
-  }
-  #toggle-panel:hover { background: rgba(255,255,255,0.1); color: #fff; }
-  
-  .panel-section { margin-bottom: 18px; }
-  .panel-section h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.3); margin-bottom: 10px; font-weight: 600; }
-  
-  .room-link {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 6px 12px; margin: 3px; border-radius: 6px;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
-    color: rgba(160,200,255,0.8); cursor: pointer; font-size: 12px; font-weight: 500;
-    transition: all 0.2s;
-  }
-  .room-link:hover { background: rgba(100,180,255,0.12); border-color: rgba(100,180,255,0.3); color: #fff; }
-  .room-link.warp { background: rgba(255,200,0,0.06); border-color: rgba(255,200,0,0.15); color: #ffd54f; }
-  .room-link.warp:hover { background: rgba(255,200,0,0.12); border-color: rgba(255,200,0,0.3); }
-  .room-link.current { background: rgba(100,255,218,0.08); border-color: rgba(100,255,218,0.2); color: #69f0ae; }
-  
-  .cam-entry {
-    padding: 8px 10px; margin: 4px 0; border-radius: 6px;
-    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-    font-size: 12px; display: flex; align-items: center; gap: 8px;
-  }
-  .cam-entry .icon { font-size: 16px; }
-  .cam-entry .info { flex: 1; }
-  .cam-entry .label { color: #64b4ff; font-weight: 500; }
-  .cam-entry .mode { color: rgba(255,255,255,0.35); font-size: 10px; display: block; }
-  .cam-entry .interactive-badge { background: rgba(255,200,0,0.15); color: #ffd54f; padding: 1px 6px; border-radius: 3px; font-size: 8px; font-weight: 600; }
-  
-  /* Camera viewports */
-  .cam-viewport {
-    position: fixed; border-radius: 10px; overflow: hidden;
-    background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(8px); z-index: 5;
-    display: none; flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    transition: opacity 0.3s, transform 0.3s;
-  }
-  .cam-viewport.visible { display: flex; }
-  .cam-viewport .header {
-    padding: 4px 10px; font-size: 10px; color: rgba(255,255,255,0.5);
-    background: rgba(0,0,0,0.6); display: flex; align-items: center; gap: 6px;
-  }
-  .cam-viewport .feed {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.5); min-height: 90px;
-    background-size: cover; background-position: center;
-    position: relative;
-  }
-  .cam-viewport .feed img {
-    width: 100%; height: 100%; object-fit: cover;
-    position: absolute; top: 0; left: 0;
-  }
-  .cam-viewport .feed .label-overlay {
-    position: absolute; bottom: 6px; left: 8px; 
-    font-size: 9px; color: rgba(255,255,255,0.4);
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-  }
-  
-  .viewport-tl { top: 80px; left: 16px; width: 220px; height: 150px; }
-  .viewport-tr { top: 80px; right: 310px; width: 220px; height: 150px; }
-  .viewport-bl { bottom: 170px; left: 16px; width: 220px; height: 150px; }
-  .viewport-br { bottom: 170px; right: 310px; width: 220px; height: 150px; }
-  .viewport-center { top: 50%; left: 50%; transform: translate(-50%,-50%); width: 380px; height: 250px; z-index: 7; }
-  
-  /* Dashboard overlays */
-  .dashboard {
-    position: fixed; background: rgba(5,5,16,0.75); backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;
-    padding: 12px 18px; z-index: 6;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    display: none;
-  }
-  .dashboard-top { top: 80px; left: 50%; transform: translateX(-50%); }
-  .dashboard-bottom { bottom: 170px; left: 50%; transform: translateX(-50%); }
-  .dashboard-right { top: 50%; right: 310px; transform: translateY(-50%); }
-  .dashboard-center { top: 50%; left: 50%; transform: translate(-50%,-50%); }
-  
-  .dashboard h4 { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.25); margin-bottom: 8px; font-weight: 600; }
-  .gauge-row { display: flex; gap: 16px; }
-  .gauge { text-align: center; min-width: 48px; }
-  .gauge .val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
-  .gauge .lbl { font-size: 8px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-  
-  /* Alarm */
-  #alarm-notification {
-    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-    background: rgba(230,57,70,0.85); backdrop-filter: blur(16px);
-    padding: 14px 28px; border-radius: 10px; font-weight: 600;
-    z-index: 30; display: none; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 8px 32px rgba(230,57,70,0.3);
-    animation: alarm-pulse 1.5s ease-in-out infinite;
-    font-size: 14px;
-  }
-  @keyframes alarm-pulse {
-    0%, 100% { box-shadow: 0 8px 32px rgba(230,57,70,0.3); }
-    50% { box-shadow: 0 8px 48px rgba(230,57,70,0.6); }
-  }
-  
-  #walk-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 25; opacity: 0; pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  #walk-overlay.show { opacity: 1; }
-  
-  #instructions {
-    position: fixed; bottom: 65px; left: 50%; transform: translateX(-50%);
-    font-size: 11px; color: rgba(255,255,255,0.15);
-    z-index: 5; text-align: center;
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    #side-panel { width: 240px; }
-    .viewport-tl, .viewport-tr, .viewport-bl, .viewport-br { width: 130px; height: 90px; }
-    .viewport-tr { right: 260px; }
-    .viewport-br { right: 260px; }
-    .dashboard-right { right: 260px; }
-    .dashboard-top { top: 76px; }
-    #compass button { padding: 5px 8px; font-size: 8px; }
-    #room-title { font-size: 14px; padding: 8px 16px; top: 14px; }
-    .gauge .val { font-size: 16px; }
-    .gauge-row { gap: 10px; }
-  }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;overflow:hidden;font-family:'SF Pro Display','Segoe UI',system-ui,sans-serif;color:#fff;user-select:none}
+#c{width:100vw;height:100vh;position:fixed;top:0;left:0}
+/* HUD */
+#h{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#h>*{pointer-events:auto}
+#rt{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(5,5,16,.82);padding:10px 24px;border-radius:10px;font-size:16px;font-weight:700;border:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);box-shadow:0 4px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px}
+.tb{padding:2px 7px;border-radius:4px;font-size:8px;font-weight:600;text-transform:uppercase}
+.tb.p{background:rgba(76,175,80,.2);color:#69f0ae;border:1px solid rgba(76,175,80,.3)}
+.tb.v{background:rgba(33,150,243,.2);color:#82b1ff;border:1px solid rgba(33,150,243,.3)}
+.tb.c{background:rgba(255,152,0,.2);color:#ffd54f;border:1px solid rgba(255,152,0,.3)}
+#ld{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;text-align:center}
+#ld .sp{width:40px;height:40px;border:3px solid rgba(255,255,255,.08);border-top:3px solid #64b4ff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ld p{font-size:12px;color:rgba(255,255,255,.4)}
+#ld.h{display:none}
+
+/* Compass */
+#cp{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);display:flex;gap:2px;background:rgba(5,5,16,.7);padding:5px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.05);backdrop-filter:blur(12px)}
+#cp button{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s;text-transform:uppercase;letter-spacing:.6px}
+#cp button:hover{background:rgba(255,255,255,.08);color:#fff}
+#cp button.a{background:rgba(100,180,255,.15);border-color:#64b4ff;color:#64b4ff}
+
+#ins{position:fixed;bottom:54px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.12);z-index:5;text-align:center}
+
+/* Viz toggle */
+#viz-btn{position:fixed;top:72px;right:310px;z-index:20;background:rgba(5,5,16,.75);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.6);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:16px;backdrop-filter:blur(12px);transition:all .15s}
+#viz-btn:hover{background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.3)}
+
+/* Viz panel */
+#viz-panel{position:fixed;bottom:0;left:0;width:100%;height:0;background:rgba(5,5,16,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);z-index:20;transition:height .3s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
+#viz-panel.o{height:260px}
+.viz-h{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04)}
+.viz-h span{font-size:12px;font-weight:600;color:rgba(255,255,255,.6)}
+.viz-h .r{font-size:10px;color:rgba(255,255,255,.25)}
+.viz-body{display:flex;flex:1;overflow:hidden}
+.viz-left{flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.viz-right{width:200px;padding:10px 14px;border-left:1px solid rgba(255,255,255,.04);overflow-y:auto}
+.viz-prompts{display:flex;gap:6px}
+.viz-prompts input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;outline:none}
+.viz-prompts input:focus{border-color:rgba(100,180,255,.4)}
+.viz-prompts button{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600}
+#viz-go{background:#64b4ff;color:#fff}
+#viz-go:hover{background:#4a9ce0}
+#viz-clear{background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)}
+#viz-clear:hover{background:rgba(255,255,255,.1);color:#fff}
+
+.viz-pal{display:flex;gap:4px;flex-wrap:wrap}
+.viz-pal button{padding:5px 10px;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.6);cursor:pointer;font-size:10px;transition:all .12s}
+.viz-pal button:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.2);color:#fff}
+.viz-pal button.drop{background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.3);color:#64b4ff}
+
+.viz-scene-header{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.25);margin-bottom:6px}
+#viz-count{font-weight:600}
+#viz-export{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px}
+#viz-export:hover{background:rgba(255,255,255,.08)}
+.viz-obj{padding:4px 8px;margin:2px 0;border-radius:4px;font-size:10px;background:rgba(255,255,255,.03);display:flex;align-items:center;gap:6px}
+.viz-obj .name{flex:1;color:rgba(255,255,255,.5)}
+.viz-obj .del{color:rgba(255,100,100,.5);cursor:pointer;font-size:12px}
+.viz-obj .del:hover{color:#ff5252}
+
+.viz-opts{display:flex;flex-wrap:wrap;gap:8px;padding:6px 0}
+.viz-opts label{font-size:10px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:4px;cursor:pointer}
+.viz-opts input[type=checkbox]{accent-color:#64b4ff}
+
+/* Object tooltips in 3D */
+.obj-label{color:#64ffda;font-size:10px;font-weight:600;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:3px;pointer-events:none}
+
+/* Cam viewports */
+.cam-vp{position:fixed;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(6px);z-index:5;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.cam-vp.v{display:flex}
+.cam-vp .hd{padding:3px 8px;font-size:9px;color:rgba(255,255,255,.4);background:rgba(0,0,0,.5);display:flex;align-items:center;gap:5px}
+.cam-vp .fd{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);min-height:80px;position:relative}
+.cam-vp .fd img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+.vp-tl{top:72px;left:12px;width:200px;height:130px}
+.vp-tr{top:72px;right:310px;width:200px;height:130px}
+.vp-bl{bottom:280px;left:12px;width:200px;height:130px}
+.vp-br{bottom:280px;right:310px;width:200px;height:130px}
+.vp-c{top:50%;left:50%;transform:translate(-50%,-50%);width:340px;height:220px;z-index:7}
+
+/* Dashboards */
+.dash{position:fixed;background:rgba(5,5,16,.7);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px 16px;z-index:6;box-shadow:0 4px 20px rgba(0,0,0,.3);display:none}
+.dash-t{top:68px;left:50%;transform:translateX(-50%)}
+.dash-b{bottom:280px;left:50%;transform:translateX(-50%)}
+.dash-r{top:50%;right:310px;transform:translateY(-50%)}
+.dash h4{font-size:8px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.2);margin-bottom:6px;font-weight:600}
+.gr{display:flex;gap:12px}
+.g{text-align:center;min-width:40px}
+.g .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.g .l{font-size:7px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+
+/* Alarm */
+#al{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:rgba(230,57,70,.82);backdrop-filter:blur(14px);padding:12px 24px;border-radius:8px;font-weight:600;z-index:30;display:none;cursor:pointer;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(230,57,70,.3);animation:ap 1.5s ease-in-out infinite;font-size:13px}
+@keyframes ap{0%,100%{box-shadow:0 8px 32px rgba(230,57,70,.3)}50%{box-shadow:0 8px 48px rgba(230,57,70,.6)}}
+#wo{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:25;opacity:0;pointer-events:none;transition:opacity .2s}
+#wo.s{opacity:1}
+
+/* Side panel */
+#sp{position:fixed;right:0;top:0;height:100%;width:270px;background:rgba(5,5,16,.9);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,.05);padding:80px 14px 16px;overflow-y:auto;transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0);z-index:15}
+#sp.h{transform:translateX(100%)}
+#sp::-webkit-scrollbar{width:2px}
+#sp::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+#tp{position:fixed;right:10px;top:16px;z-index:16;background:rgba(5,5,16,.75);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.6);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;backdrop-filter:blur(12px)}
+.ps{margin-bottom:16px}
+.ps h3{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.25);margin-bottom:8px;font-weight:600}
+.rl{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;margin:2px;border-radius:5px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:rgba(160,200,255,.7);cursor:pointer;font-size:11px;font-weight:500;transition:all .12s}
+.rl:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#fff}
+.rl.w{background:rgba(255,200,0,.05);border-color:rgba(255,200,0,.12);color:#ffd54f}
+.rl.w:hover{background:rgba(255,200,0,.1)}
+.rl.c{background:rgba(100,255,218,.07);border-color:rgba(100,255,218,.15);color:#69f0ae}
+
+.ce{padding:6px 8px;margin:3px 0;border-radius:5px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:11px;display:flex;align-items:center;gap:6px}
+.ce .ic{font-size:14px}
+.ce .if{flex:1}
+.ce .lb{color:#64b4ff;font-weight:500}
+.ce .md{color:rgba(255,255,255,.3);font-size:9px;display:block}
+
+/* Chat panel */
+#chat-panel{position:fixed;bottom:0;left:0;width:420px;height:0;background:rgba(5,5,16,.88);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);border-radius:0 8px 0 0;z-index:18;transition:height .25s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
+#chat-panel.o{height:280px}
+#chat-btn{position:fixed;bottom:116px;left:16px;z-index:19;background:rgba(5,5,16,.7);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;backdrop-filter:blur(12px)}
+#chat-btn:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.2)}
+.chat-h{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.chat-h span{font-size:11px;font-weight:600;color:rgba(255,255,255,.5)}
+.chat-h button{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px}
+.chat-h button:hover{background:rgba(255,255,255,.08)}
+.chat-msgs{flex:1;overflow-y:auto;padding:8px 14px;font-size:11px;line-height:1.5}
+.chat-msgs .m{margin-bottom:6px;display:flex;gap:8px}
+.chat-msgs .m .a{color:rgba(255,255,255,.4);font-weight:600;min-width:40px}
+.chat-msgs .m .t{color:rgba(255,255,255,.7)}
+.chat-msgs .m .t.ok{color:#69f0ae}
+.chat-msgs .system{color:rgba(100,180,255,.5);font-style:italic;font-size:10px;padding:2px 0}
+.chat-in{display:flex;gap:4px;padding:6px 10px;border-top:1px solid rgba(255,255,255,.04)}
+.chat-in input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;outline:none}
+.chat-in input:focus{border-color:rgba(100,180,255,.3)}
+.chat-in button{padding:6px 12px;border-radius:4px;border:none;background:#64b4ff;color:#fff;cursor:pointer;font-size:11px;font-weight:600}
+
+@media(max-width:768px){
+  #sp{width:220px}
+  .vp-tl,.vp-tr,.vp-bl,.vp-br{width:120px;height:80px}
+  .vp-tr{right:240px}.vp-br{right:240px}
+  .dash-r{right:240px}
+  #cp button{padding:4px 6px;font-size:7px}
+  #rt{font-size:13px;padding:6px 14px}
+  #viz-panel.o{height:200px}
+  .viz-right{width:140px}
+  #chat-panel{width:300px}
+  #chat-panel.o{height:220px}
+}
 </style>
 </head>
 <body>
+<div id="ld"><div class="sp"></div><p>Loading vessel rooms...</p></div>
+<div id="c"></div>
 
-<div id="loading">
-  <div class="spinner"></div>
-  <p>Loading vessel rooms...</p>
-</div>
-
-<div id="canvas-container"></div>
-
-<div id="hud">
-  <div id="room-title">
-    <span id="room-icon">🚪</span>
-    <span id="room-name">Wheelhouse</span>
-    <span class="type-badge physical" id="room-type-badge">physical</span>
+<div id="h">
+  <div id="rt"><span id="ri">🚪</span><span id="rn">Wheelhouse</span><span class="tb p" id="rtb">physical</span></div>
+  <div id="cp">
+    <button data-l="fore">↑ Fore</button><button data-l="aft">↓ Aft</button>
+    <button data-l="port">← Port</button><button data-l="starboard">→ Stbd</button>
   </div>
-  
-  <div id="compass">
-    <button data-look="fore">↑ Fore</button>
-    <button data-look="aft">↓ Aft</button>
-    <button data-look="port">← Port</button>
-    <button data-look="starboard">→ Stbd</button>
+  <div id="ins">Drag to look · Compass/1-9 for directions · Panel for warp</div>
+  <div id="al"></div><div id="wo"></div>
+  <div id="tp">☰</div>
+</div>
+
+<div class="cam-vp vp-tl" id="vptl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
+<div class="cam-vp vp-tr" id="vptr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
+<div class="cam-vp vp-bl" id="vpbl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
+<div class="cam-vp vp-br" id="vpbr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
+<div class="cam-vp vp-c" id="vpc"><div class="hd">🎯 <span class="cn">Gunnery</span></div><div class="fd" style="justify-content:center;align-items:center;"><img src="textures/cam_gunnery.jpg"><div style="position:absolute;bottom:8px;display:flex;gap:6px;z-index:2"><button class="cb">🔍 +</button><button class="cb" style="background:rgba(255,200,0,.15);border-color:rgba(255,200,0,.3);color:#ffd54f">🎯 Acq</button></div></div></div>
+
+<div class="dash dash-b" id="db"><h4>⚙ ENGINE DASH</h4><div class="gr"><div class="g"><div class="v" data-b="1800">1800</div><div class="l">RPM</div></div><div class="g"><div class="v" data-b="72">72</div><div class="l">FUEL%</div></div><div class="g"><div class="v" data-b="185">185</div><div class="l">TEMP</div></div><div class="g"><div class="v" data-b="3">3</div><div class="l">TRIM</div></div></div></div>
+<div class="dash dash-t" id="dt"><h4>🧭 NAV</h4><div class="gr"><div class="g"><div class="v" data-b="273">273</div><div class="l">HDG</div></div><div class="g"><div class="v" data-b="12">12</div><div class="l">SPD</div></div><div class="g"><div class="v" data-b="42">42</div><div class="l">DPTH</div></div><div class="g"><div class="v" data-b="18">18</div><div class="l">WIND</div></div></div></div>
+<div class="dash dash-r" id="dr"><h4>🔥 ENG MONITOR</h4><div class="gr"><div class="g"><div class="v" data-b="185">185</div><div class="l">E1T</div></div><div class="g"><div class="v" data-b="182">182</div><div class="l">E2T</div></div><div class="g"><div class="v" data-b="320">320</div><div class="l">EXH</div></div><div class="g"><div class="v" data-b="55">55</div><div class="l">OIL</div></div></div></div>
+
+<!-- Footer panels -->
+<button id="chat-btn">💬</button>
+<div id="chat-panel">
+  <div class="chat-h"><span>💬 Chat with Room Agent</span><button id="chat-close">✕</button></div>
+  <div class="chat-msgs" id="chat-msgs">
+    <div class="system">Room Navigator loaded. Try: "add a table" or "mock up a net drum"</div>
   </div>
-  
-  <div id="instructions">Drag to look · Click doors to walk · Warp from panel · WASD for directions</div>
-  
-  <div id="alarm-notification"></div>
-  <div id="walk-overlay"></div>
-  
-  <div id="toggle-panel">☰</div>
+  <div class="chat-in">
+    <input id="chat-input" placeholder='e.g. "add a pot hauler" or "show a fire in engine room"...'>
+    <button id="chat-send">Send</button>
+  </div>
 </div>
 
-<!-- Camera viewports -->
-<div class="cam-viewport viewport-tl" id="viewport-tl">
-  <div class="header">📷 <span class="cam-name">Camera</span></div>
-  <div class="feed"><img src="" alt=""><span class="label-overlay"></span></div>
-</div>
-<div class="cam-viewport viewport-tr" id="viewport-tr">
-  <div class="header">📷 <span class="cam-name">Camera</span></div>
-  <div class="feed"><img src="" alt=""><span class="label-overlay"></span></div>
-</div>
-<div class="cam-viewport viewport-bl" id="viewport-bl">
-  <div class="header">📷 <span class="cam-name">Camera</span></div>
-  <div class="feed"><img src="" alt=""><span class="label-overlay"></span></div>
-</div>
-<div class="cam-viewport viewport-br" id="viewport-br">
-  <div class="header">📷 <span class="cam-name">Camera</span></div>
-  <div class="feed"><img src="" alt=""><span class="label-overlay"></span></div>
+<div id="sp">
+  <div class="ps"><h3>📍 <span id="crn">Wheelhouse</span></h3><p id="crd" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:6px"></p></div>
+  <div class="ps"><h3>🚶 Adjacent</h3><div id="adj"></div></div>
+  <div class="ps"><h3>⚡ Warp</h3><div id="warp"></div></div>
+  <div class="ps"><h3>📷 Cameras</h3><div id="cams"></div></div>
+  <div class="ps"><h3>🏠 All Rooms</h3><div id="allr"></div></div>
+  <div class="ps"><h3>🚨 Test Alarm</h3><div style="display:flex;gap:4px"><select id="as" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.7);padding:5px 6px;border-radius:4px;font-size:10px"></select><button id="at" style="background:#c62828;color:#fff;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">🚨</button></div></div>
 </div>
 
-<div class="cam-viewport viewport-center" id="viewport-center">
-  <div class="header">🎯 <span class="cam-name">Gunnery Station</span></div>
-  <div class="feed" style="flex-direction:column;gap:10px;justify-content:center;align-items:center;">
-    <img src="textures/cam_gunnery.jpg" alt="" style="position:absolute;width:100%;height:100%;object-fit:cover;">
-    <div style="display:flex;gap:8px;z-index:2;">
-      <button class="cam-btn">🔍 Zoom +</button>
-      <button class="cam-btn">🔍 Zoom -</button>
-      <button class="cam-btn acquire">🎯 Acquire</button>
+<div id="viz-btn" title="Toggle Visualizer">🎨 Design</div>
+<div id="viz-panel">
+  <div class="viz-h"><span>🎨 Rapid Visualizer</span><span class="r">Objects in <span id="vr">Wheelhouse</span></span></div>
+  <div class="viz-body">
+    <div class="viz-left">
+      <div class="viz-prompts">
+        <input id="viz-inp" placeholder='"add a winch on the foredeck" or "show smoke in engine room"'>
+        <button id="viz-go">Run</button>
+        <button id="viz-clr">✕</button>
+      </div>
+      <div class="viz-pal">
+        <button data-t="box">📦 Box</button><button data-t="cyl">🛢️ Drum</button>
+        <button data-t="sph">⭕ Sphere</button><button data-t="tor">⭮ Torus</button>
+        <button data-t="cone">🔺 Cone</button><button data-t="crew">🧑 Crew</button>
+        <button data-t="fire">🔥 Fire</button><button data-t="label">🏷️ Label</button>
+      </div>
+      <div class="viz-opts">
+        <label><input type="checkbox" id="vsl"> Show labels</label>
+        <label><input type="checkbox" id="vwi"> Wireframe room</label>
+      </div>
+    </div>
+    <div class="viz-right">
+      <div class="viz-scene-header"><span id="vc">0 objects</span><button id="ve">📋 Export</button></div>
+      <div id="vo"></div>
     </div>
   </div>
 </div>
 
-<!-- Dashboards -->
-<div class="dashboard dashboard-bottom" id="dash-bottom">
-  <h4>⚙ ENGINE DASHBOARD</h4>
-  <div class="gauge-row">
-    <div class="gauge"><div class="val" data-base="1800">1800</div><div class="lbl">RPM</div></div>
-    <div class="gauge"><div class="val" data-base="72">72</div><div class="lbl">FUEL%</div></div>
-    <div class="gauge"><div class="val" data-base="185">185</div><div class="lbl">TEMP°F</div></div>
-    <div class="gauge"><div class="val" data-base="3">3</div><div class="lbl">TRIM°</div></div>
-  </div>
-</div>
-<div class="dashboard dashboard-top" id="dash-top">
-  <h4>🧭 NAV DISPLAY</h4>
-  <div class="gauge-row">
-    <div class="gauge"><div class="val" data-base="273">273</div><div class="lbl">HDG°</div></div>
-    <div class="gauge"><div class="val" data-base="12">12</div><div class="lbl">SPD KN</div></div>
-    <div class="gauge"><div class="val" data-base="42">42</div><div class="lbl">DEPTH F</div></div>
-    <div class="gauge"><div class="val" data-base="18">18</div><div class="lbl">WIND KN</div></div>
-  </div>
-</div>
-<div class="dashboard dashboard-right" id="dash-right">
-  <h4>🔥 ENGINE MONITOR</h4>
-  <div class="gauge-row">
-    <div class="gauge"><div class="val" data-base="185">185</div><div class="lbl">E1 TEMP</div></div>
-    <div class="gauge"><div class="val" data-base="182">182</div><div class="lbl">E2 TEMP</div></div>
-    <div class="gauge"><div class="val" data-base="320">320</div><div class="lbl">EXH°F</div></div>
-    <div class="gauge"><div class="val" data-base="55">55</div><div class="lbl">OIL PSI</div></div>
-  </div>
-</div>
+<style>.cb{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#eee;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:10px}
+.cb:hover{background:rgba(255,255,255,.12)}</style>
 
-<!-- Side panel -->
-<div id="side-panel">
-  <div class="panel-section">
-    <h3>📍 <span id="current-room-name">Wheelhouse</span></h3>
-    <p id="current-room-desc" style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px;"></p>
-  </div>
-  
-  <div class="panel-section">
-    <h3>🚶 Adjacent (Walk)</h3>
-    <div id="adjacent-rooms"></div>
-  </div>
-  
-  <div class="panel-section">
-    <h3>⚡ Warp (Teleport)</h3>
-    <div id="warp-rooms"></div>
-  </div>
-  
-  <div class="panel-section">
-    <h3>📷 Room Cameras</h3>
-    <div id="room-cameras"></div>
-  </div>
-  
-  <div class="panel-section">
-    <h3>🏠 All Rooms</h3>
-    <div id="all-rooms"></div>
-  </div>
-  
-  <div class="panel-section">
-    <h3>🚨 Test Alarm</h3>
-    <div style="display:flex;gap:6px;">
-      <select id="alarm-room-select" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);padding:6px 8px;border-radius:6px;font-size:11px;"></select>
-      <button id="alarm-trigger" style="background:#c62828;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;">ALARM</button>
-    </div>
-  </div>
-</div>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
-  }
-}
-</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
 
 <script type="module">
 import * as THREE from 'three';
 
-// =============================================
-// ROOM CONFIG
-// =============================================
-const ROOMS = {
-  wheelhouse: {
-    name: "Wheelhouse", type:"physical", desc:"Primary navigation and engine controls",
-    adj:["galley","wheelhouse_roof","engine_room"], warp:["crow_nest","foredeck","aft_cockpit"],
-    texture:"textures/pano_wheelhouse.jpg", color:"#4a7fb5",
-    cams:[{id:"dashcam",label:"Engine Dash",icon:"📊",type:"dashboard"},{id:"radar",label:"Radar Display",icon:"📡",type:"radar"}],
-    dashboards:["bottom","top","right"]
-  },
-  galley: {
-    name:"Galley", type:"physical", desc:"Mess and cooking area",
-    adj:["wheelhouse","foredeck"], warp:[],
-    texture:"textures/pano_galley.jpg", color:"#d4a55a",
-    cams:[], dashboards:[]
-  },
-  foredeck: {
-    name:"Foredeck", type:"physical", desc:"Forward deck and bow area",
-    adj:["galley","crow_nest"], warp:[],
-    texture:"textures/pano_foredeck.jpg", color:"#7cb342",
-    cams:[{id:"bow_cam",label:"Bow Camera",icon:"🎥",type:"ptz"}], dashboards:[]
-  },
-  aft_cockpit: {
-    name:"Aft Cockpit", type:"physical", desc:"Work deck — hauling and gear",
-    adj:["engine_room"], warp:["wheelhouse"],
-    texture:"textures/pano_aft_cockpit.jpg", color:"#8d6e63",
-    cams:[{id:"stern_cam",label:"Stern Camera",icon:"🎥",type:"ptz"},{id:"nav_display",label:"Nav Display",icon:"🧭",type:"nav"}],
-    dashboards:["center"]
-  },
-  engine_room: {
-    name:"Engine Room", type:"physical", desc:"Main power — twin diesel",
-    adj:["wheelhouse","aft_cockpit"], warp:["wheelhouse"],
-    texture:"textures/pano_engine_room.jpg", color:"#c62828",
-    cams:[{id:"engine_port",label:"Port Engine",icon:"🔥",type:"thermal"},{id:"engine_stbd",label:"Starboard Engine",icon:"🔥",type:"thermal"},{id:"thermal_fwd",label:"Fwd Thermal",icon:"🌡️",type:"thermal"},{id:"thermal_aft",label:"Aft Thermal",icon:"🌡️",type:"thermal"}],
-    dashboards:["right"]
-  },
-  wheelhouse_roof: {
-    name:"Wheelhouse Roof", type:"physical", desc:"Overhead observation deck",
-    adj:["wheelhouse","crow_nest"], warp:[],
-    texture:"textures/pano_wheelhouse_roof.jpg", color:"#5c6bc0",
-    cams:[{id:"pano_roof",label:"Roof Panorama",icon:"🔄",type:"quilted"}], dashboards:[]
-  },
-  crow_nest: {
-    name:"Crow's Nest", type:"physical", desc:"Mast lookout — highest point",
-    adj:["foredeck","wheelhouse_roof"], warp:["wheelhouse"],
-    texture:"textures/pano_crows_nest.jpg", color:"#ff8f00",
-    cams:[{id:"cn_ptz",label:"🔭 PTZ Lookout",icon:"🔭",type:"ptz",interactive:true}],
-    dashboards:[],
-    cam_interactive:true
-  },
-  alarm_center: {
-    name:"Alarm Center", type:"virtual", desc:"Composite alarm monitoring",
-    adj:[], warp:[],
-    texture:"textures/pano_wheelhouse.jpg", color:"#e53935",
-    cams:[{id:"alarm_board",label:"Alarm Board",icon:"🚨",type:"dashboard"}],
-    dashboards:[]
-  },
-  four_cam: {
-    name:"4-Camera Wall", type:"composite", desc:"Composite multi-angle display",
-    adj:[], warp:[],
-    texture:"textures/pano_wheelhouse.jpg", color:"#00897b",
-    cams:[{id:"composite_bow",label:"Bow Cam",icon:"🎥",type:"composite"},{id:"composite_stern",label:"Stern Cam",icon:"🎥",type:"composite"},{id:"composite_engine",label:"Engines",icon:"🔥",type:"composite"},{id:"composite_radar",label:"Radar",icon:"📡",type:"composite"}],
-    dashboards:[]
-  }
+// ===== ROOM CONFIG =====
+const R={
+  wheelhouse:{n:"Wheelhouse",t:"physical",d:"Navigation & engine controls",a:["galley","wheelhouse_roof","engine_room"],w:["crow_nest","foredeck","aft_cockpit"],tx:"textures/pano_wheelhouse.jpg",c:[{id:"d",l:"Engine Dash",i:"📊",y:"dash"},{id:"r",l:"Radar",i:"📡",y:"radar"}],db:["b","t","r"]},
+  galley:{n:"Galley",t:"physical",d:"Mess & cooking",a:["wheelhouse","foredeck"],w:[],tx:"textures/pano_galley.jpg",c:[],db:[]},
+  foredeck:{n:"Foredeck",t:"physical",d:"Forward deck",a:["galley","crow_nest"],w:[],tx:"textures/pano_foredeck.jpg",c:[{id:"b",l:"Bow Cam",i:"🎥",y:"ptz"}],db:[]},
+  aft_cockpit:{n:"Aft Cockpit",t:"physical",d:"Work deck",a:["engine_room"],w:["wheelhouse"],tx:"textures/pano_aft_cockpit.jpg",c:[{id:"sc",l:"Stern Cam",i:"🎥",y:"ptz"},{id:"nd",l:"Nav Display",i:"🧭",y:"nav"}],db:["c"]},
+  engine_room:{n:"Engine Room",t:"physical",d:"Main power",a:["wheelhouse","aft_cockpit"],w:["wheelhouse"],tx:"textures/pano_engine_room.jpg",c:[{id:"ep",l:"Port Eng",i:"🔥",y:"thermal"},{id:"es",l:"Stbd Eng",i:"🔥",y:"thermal"},{id:"tf",l:"Fwd Thermal",i:"🌡️",y:"thermal"},{id:"ta",l:"Aft Thermal",i:"🌡️",y:"thermal"}],db:["r"]},
+  wheelhouse_roof:{n:"Wheelhouse Roof",t:"physical",d:"Overhead deck",a:["wheelhouse","crow_nest"],w:[],tx:"textures/pano_wheelhouse_roof.jpg",c:[{id:"pr",l:"Pano",i:"🔄",y:"quilted"}],db:[]},
+  crow_nest:{n:"Crow's Nest",t:"physical",d:"Lookout",a:["foredeck","wheelhouse_roof"],w:["wheelhouse"],tx:"textures/pano_crows_nest.jpg",c:[{id:"cn",l:"🔭 PTZ",i:"🔭",y:"ptz",in:true}],db:[],ci:true},
+  alarm_center:{n:"Alarm Center",t:"virtual",d:"Composite monitoring",a:[],w:[],tx:"textures/pano_wheelhouse.jpg",c:[{id:"ab",l:"Board",i:"🚨",y:"dash"}],db:[]},
+  four_cam:{n:"4-Camera Wall",t:"composite",d:"Multi-angle display",a:[],w:[],tx:"textures/pano_wheelhouse.jpg",c:[{id:"cb",l:"Bow",i:"🎥",y:"cmp"},{id:"cs",l:"Stern",i:"🎥",y:"cmp"},{id:"ce",l:"Engines",i:"🔥",y:"cmp"},{id:"cr",l:"Radar",i:"📡",y:"cmp"}],db:[]}
+};
+const TX={"thermal":"textures/cam_thermal.jpg","gunnery":"textures/cam_gunnery.jpg","radar":"textures/cam_radar.jpg","default":"textures/cam_thermal.jpg"};
+
+// ===== THREE.JS =====
+const c=document.getElementById('c'),s=new THREE.Scene;
+const cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1e3);cam.position.set(0,0,0);
+const r=new THREE.WebGLRenderer({antialias:true});
+r.setSize(innerWidth,innerHeight);r.setPixelRatio(Math.min(devicePixelRatio,2));r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.9;
+c.appendChild(r.domElement);
+
+// ===== STATE =====
+let cur="wheelhouse",walking=false;
+const sph={theta:0,phi:0},ts={theta:0,phi:0};
+let sphere=null,vizGroup=null,spriteGroup=null,wf=false;
+
+// ===== TEXTURES =====
+const tl=new THREE.TextureLoader,texs={};
+function loadRoomTex(id){
+  const rm=R[id];if(!rm)return;
+  return new Promise(r=>tl.load(rm.tx,t=>{t.colorSpace=THREE.SRGBColorSpace;texs[id]=t;r(t)},null,()=>r(null)));
+}
+
+// ===== ROOM RENDER =====
+function buildRoom(id){
+  if(sphere){s.remove(sphere);sphere.geometry.dispose();sphere.material.dispose();sphere=null}
+  const rm=R[id];if(!rm)return;
+  const g=new THREE.SphereGeometry(50,64,64);g.scale(-1,1,1);
+  const tx=texs[id];
+  const m=new THREE.MeshBasicMaterial({map:tx||undefined,color:tx?undefined:new THREE.Color(rm.t||"#333"),side:THREE.BackSide});
+  sphere=new THREE.Mesh(g,m);s.add(sphere);
+  if(wf)sphere.material.wireframe=true;
+}
+
+// ===== VIZ ENGINE =====
+const objs=[];
+const PALETTE={
+  box:(p)=>({type:"box",c:p.c||"#64b4ff",w:p.w||1,h:p.h||.6,d:p.d||.8}),
+  cyl:(p)=>({type:"cyl",c:p.c||"#8d6e63",r:p.r||.5,h:p.h||.6}),
+  sph:(p)=>({type:"sph",c:p.c||"#ffd54f",r:p.r||.5}),
+  tor:(p)=>({type:"tor",c:p.c||"#78909c",r:p.r||.6,t:p.t||.15}),
+  cone:(p)=>({type:"cone",c:p.c||"#ff8f00",r:p.r||.4,h:p.h||.8}),
+  fire:()=>({type:"fire",c:"#ff4400",h:1.2}),
+  crew:()=>({type:"crew",c:"#64ffda",h:1.6}),
+  label:(p)=>({type:"label",t:p.t||"Label",c:p.c||"#fff"})
 };
 
-const TEXTURE_MAP = {
-  thermal: "textures/cam_thermal.jpg",
-  gunnery: "textures/cam_gunnery.jpg",
-  radar: "textures/cam_radar.jpg",
-  default: "textures/cam_thermal.jpg"
-};
+function addObject(type,label,pos,props){
+  const id="obj_"+(objs.length+1);
+  const base=PALETTE[type]?.(props||{});
+  if(!base)return;
+  objs.push({id,type,label:label||type,pos:pos||[0,0,0],...base});
+  renderViz();
+  updateObjList();
+}
 
-// =============================================
-// STATE
-// =============================================
-let currentRoomId = "wheelhouse";
-let isWalking = false;
-const spherical = { theta: 0, phi: 0 };
-const targetSpherical = { theta: 0, phi: 0 };
-
-// =============================================
-// THREE.JS SETUP
-// =============================================
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 0);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.9;
-container.appendChild(renderer.domElement);
-
-// =============================================
-// TEXTURE LOADER
-// =============================================
-const textureLoader = new THREE.TextureLoader();
-const loadingManager = new THREE.LoadingManager();
-const roomTextures = {};
-
-function loadRoomTexture(roomId) {
-  return new Promise((resolve) => {
-    const room = ROOMS[roomId];
-    if (!room) return resolve(null);
-    textureLoader.load(room.texture, (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      roomTextures[roomId] = tex;
-      resolve(tex);
-    }, undefined, () => resolve(null));
+function renderViz(){
+  if(vizGroup){s.remove(vizGroup);vizGroup.traverse(c=>{if(c.isMesh){c.geometry.dispose();c.material.dispose()}});vizGroup=null}
+  if(spriteGroup){s.remove(spriteGroup);spriteGroup=null}
+  if(!objs.length)return;
+  vizGroup=new THREE.Group;
+  objs.forEach(o=>{
+    const p=o.pos;
+    if(o.type==="box"){
+      const g=new THREE.BoxGeometry(o.w,o.h,o.d);
+      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.7,metalness:.3});
+      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
+    }else if(o.type==="cyl"){
+      const g=new THREE.CylinderGeometry(o.r,o.r,o.h,24);
+      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.4});
+      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
+    }else if(o.type==="sph"){
+      const g=new THREE.SphereGeometry(o.r,24,24);
+      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.3,metalness:.1});
+      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.r,p[2]);vizGroup.add(mesh);
+    }else if(o.type==="tor"){
+      const g=new THREE.TorusGeometry(o.r,o.t,16,32);
+      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.5,metalness:.5});
+      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.r,p[2]);vizGroup.add(mesh);
+    }else if(o.type==="cone"){
+      const g=new THREE.ConeGeometry(o.r,o.h,24);
+      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.3});
+      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
+    }else if(o.type==="fire"){
+      // Particle-ish fire: stack red/orange/yellow cones
+      for(let i=0;i<5;i++){
+        const g=new THREE.ConeGeometry(.15-i*.02,o.h*.4-Math.random()*.2,8);
+        const m=new THREE.MeshStandardMaterial({color:["#ff4400","#ff6600","#ff8800","#ffaa00","#ffcc00"][i],emissive:["#ff2200","#ff4400","#ff6600","#ff8800","#ffaa00"][i],emissiveIntensity:.4+Math.random()*.3,transparent:true,opacity:.7+Math.random()*.3});
+        const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0]+(Math.random()-.5)*.3,p[1]+i*.2,p[2]+(Math.random()-.5)*.3);
+        vizGroup.add(mesh);
+      }
+    }else if(o.type==="crew"){
+      // Simple person: cylinder body + sphere head
+      const bg=new THREE.CylinderGeometry(.25,.25,1,8);
+      const bm=new THREE.MeshStandardMaterial({color:o.c});
+      const body=new THREE.Mesh(bg,bm);body.position.set(p[0],p[1]+.5,p[2]);vizGroup.add(body);
+      const sg=new THREE.SphereGeometry(.15,8,8);
+      const sm=new THREE.MeshStandardMaterial({color:"#ffccaa"});
+      const head=new THREE.Mesh(sg,sm);head.position.set(p[0],p[1]+1.1,p[2]);vizGroup.add(head);
+    }
   });
+  s.add(vizGroup);
 }
 
-// =============================================
-// ROOM RENDERER
-// =============================================
-let currentSphere = null;
+function updateObjList(){
+  const el=document.getElementById('vo');
+  document.getElementById('vc').textContent=objs.length+" objects";
+  if(!objs.length){el.innerHTML='<div style="color:rgba(255,255,255,.15);font-size:10px">No objects. Use palette or type a prompt.</div>';return}
+  el.innerHTML=objs.map((o,i)=>`<div class="viz-obj"><span class="name">${o.label||o.type}</span><span style="color:rgba(255,255,255,.2);font-size:9px">${o.pos.map(v=>v.toFixed(1)).join(',')}</span><span class="del" data-i="${i}">✕</span></div>`).join('');
+  el.querySelectorAll('.del').forEach(d=>d.addEventListener('click',()=>{
+    objs.splice(parseInt(d.dataset.i),1);renderViz();updateObjList();
+  }));
+}
 
-function buildRoom(roomId) {
-  if (currentSphere) {
-    scene.remove(currentSphere);
-    currentSphere.geometry.dispose();
-    currentSphere.material.dispose();
-    currentSphere = null;
+function clearViz(){
+  objs.length=0;renderViz();updateObjList();
+}
+
+// ===== CHAT PROMPT PARSER =====
+function parsePrompt(txt){
+  const t=txt.toLowerCase();
+  // Pattern: "add [type] [optional with props]"
+  const typeMap={box:"box",drum:"cyl",cylinder:"cyl",winch:"cyl",wheel:"tor",table:"box",crate:"box",console:"box",buoy:"sph",light:"sph",tank:"sph",funnel:"cone",vent:"cone",cone:"cone",fire:"fire",smoke:"fire",flame:"fire",crew:"crew",person:"crew",man:"crew"};
+  
+  // Try to match
+  let type=null,label=null;
+  for(const [word,vt] of Object.entries(typeMap)){
+    if(t.includes(word)){type=vt;label=word;break;}
   }
-  
-  const room = ROOMS[roomId];
-  if (!room) return;
-  
-  // Sphere geometry (interior view)
-  const geo = new THREE.SphereGeometry(50, 64, 64);
-  geo.scale(-1, 1, 1); // flip normals for interior
-  
-  const tex = roomTextures[roomId];
-  const mat = new THREE.MeshBasicMaterial({
-    map: tex || undefined,
-    color: tex ? undefined : new THREE.Color(room.color),
-    side: THREE.BackSide
-  });
-  
-  currentSphere = new THREE.Mesh(geo, mat);
-  scene.add(currentSphere);
-}
-
-// =============================================
-// NAVIGATION
-// =============================================
-function navigateTo(roomId) {
-  if (isWalking || !ROOMS[roomId] || roomId === currentRoomId) return;
-  isWalking = true;
-  document.getElementById('walk-overlay').classList.add('show');
-  setTimeout(() => {
-    currentRoomId = roomId;
-    buildRoom(roomId);
-    updateUI();
-    document.getElementById('walk-overlay').classList.remove('show');
-    isWalking = false;
-  }, 250);
-}
-
-function warpTo(roomId) {
-  if (!ROOMS[roomId] || roomId === currentRoomId) return;
-  isWalking = true;
-  document.getElementById('walk-overlay').classList.add('show');
-  setTimeout(() => {
-    currentRoomId = roomId;
-    buildRoom(roomId);
-    updateUI();
-    document.getElementById('walk-overlay').classList.remove('show');
-    isWalking = false;
-    targetSpherical.theta = 0;
-    targetSpherical.phi = 0;
-    spherical.theta = 0;
-    spherical.phi = 0;
-  }, 200);
-}
-
-// =============================================
-// LOOK DIRECTION
-// =============================================
-function lookDirection(dir) {
-  const targets = {
-    fore: { theta: 0, phi: 0 },
-    aft: { theta: Math.PI, phi: 0 },
-    port: { theta: Math.PI/2, phi: 0 },
-    starboard: { theta: -Math.PI/2, phi: 0 }
-  };
-  if (targets[dir]) {
-    Object.assign(targetSpherical, targets[dir]);
-    document.querySelectorAll('#compass button').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`#compass button[data-look="${dir}"]`);
-    if (btn) btn.classList.add('active');
+  if(type==="fire"||t.includes("mock")||t.includes("simulate")||t.includes("show")){
+    // Random position in room
+    const pos=[(Math.random()-.5)*4,0,(Math.random()-.5)*3];
+    addObject(type||"box",label||txt.slice(0,15),pos);
+    const names={box:"crate",cyl:"drum",sph:"buoy",tor:"wheel",cone:"vent",fire:"fire",crew:"crew"};
+    return `Rendered a ${names[type]||type} in ${R[cur].n}. Try moving it or adding more objects.`;
   }
+  return null;
 }
 
-document.querySelectorAll('#compass button').forEach(b => 
-  b.addEventListener('click', () => lookDirection(b.dataset.look))
-);
+// ===== NAVIGATION =====
+function navTo(id){
+  if(walking||!R[id]||id===cur)return;
+  walking=true;document.getElementById('wo').classList.add('s');
+  setTimeout(()=>{cur=id;buildRoom(id);updateUI();renderViz();document.getElementById('wo').classList.remove('s');walking=false},250);
+}
+function warpTo(id){
+  if(!R[id]||id===cur)return;
+  walking=true;document.getElementById('wo').classList.add('s');
+  setTimeout(()=>{cur=id;buildRoom(id);updateUI();renderViz();document.getElementById('wo').classList.remove('s');walking=false;ts.theta=0;ts.phi=0;sph.theta=0;sph.phi=0},200);
+}
+function lookDir(d){
+  const m={fore:{theta:0,phi:0},aft:{theta:Math.PI,phi:0},port:{theta:Math.PI/2,phi:0},starboard:{theta:-Math.PI/2,phi:0}};
+  if(m[d]){Object.assign(ts,m[d]);document.querySelectorAll('#cp button').forEach(b=>b.classList.remove('a'));document.querySelector(`#cp button[data-l="${d}"]`)?.classList.add('a')}
+}
+document.querySelectorAll('#cp button').forEach(b=>b.addEventListener('click',()=>lookDir(b.dataset.l)));
 
-// =============================================
-// MOUSE/TOUCH CONTROLS
-// =============================================
-let isDragging = false;
-let prevMouse = { x:0, y:0 };
-let touchStart = null;
-
-renderer.domElement.addEventListener('mousedown', e => {
-  isDragging = false;
-  prevMouse = { x: e.clientX, y: e.clientY };
-});
-
-renderer.domElement.addEventListener('mousemove', e => {
-  if (e.buttons !== 1) return;
-  const dx = e.clientX - prevMouse.x;
-  const dy = e.clientY - prevMouse.y;
-  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) isDragging = true;
-  targetSpherical.theta -= dx * 0.005;
-  targetSpherical.phi -= dy * 0.005;
-  targetSpherical.phi = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, targetSpherical.phi));
-  prevMouse = { x: e.clientX, y: e.clientY };
-  document.querySelectorAll('#compass button').forEach(b => b.classList.remove('active'));
-});
-
-renderer.domElement.addEventListener('touchstart', e => {
-  if (e.touches.length === 1) touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-}, { passive: true });
-
-renderer.domElement.addEventListener('touchmove', e => {
-  if (e.touches.length === 1 && touchStart) {
-    targetSpherical.theta -= (e.touches[0].clientX - touchStart.x) * 0.005;
-    targetSpherical.phi -= (e.touches[0].clientY - touchStart.y) * 0.005;
-    targetSpherical.phi = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, targetSpherical.phi));
-    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }
-}, { passive: true });
-
-renderer.domElement.addEventListener('touchend', () => { touchStart = null; });
+// Mouse
+let drag=false,pm={x:0,y:0},tsc=null;
+r.domElement.addEventListener('mousedown',e=>{drag=false;pm={x:e.clientX,y:e.clientY}});
+r.domElement.addEventListener('mousemove',e=>{if(e.buttons!==1)return;const dx=e.clientX-pm.x,dy=e.clientY-pm.y;if(Math.abs(dx)>2||Math.abs(dy)>2)drag=true;ts.theta-=dx*.005;ts.phi-=dy*.005;ts.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,ts.phi));pm={x:e.clientX,y:e.clientY};document.querySelectorAll('#cp button').forEach(b=>b.classList.remove('a'))});
+r.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1)tsc={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
+r.domElement.addEventListener('touchmove',e=>{if(e.touches.length===1&&tsc){ts.theta-=(e.touches[0].clientX-tsc.x)*.005;ts.phi-=(e.touches[0].clientY-tsc.y)*.005;ts.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,ts.phi));tsc={x:e.touches[0].clientX,y:e.touches[0].clientY}}},{passive:true});
+r.domElement.addEventListener('touchend',()=>{tsc=null});
 
 // Keyboard
-document.addEventListener('keydown', e => {
-  const map = { w:'fore', ArrowUp:'fore', s:'aft', ArrowDown:'aft', a:'port', ArrowLeft:'port', d:'starboard', ArrowRight:'starboard' };
-  if (map[e.key]) { lookDirection(map[e.key]); e.preventDefault(); }
-  const n = parseInt(e.key);
-  if (n >= 1 && n <= 9) {
-    const rooms = Object.keys(ROOMS);
-    if (rooms[n-1]) warpTo(rooms[n-1]);
-  }
+document.addEventListener('keydown',e=>{
+  const km={w:'fore',ArrowUp:'fore',s:'aft',ArrowDown:'aft',a:'port',ArrowLeft:'port',d:'starboard',ArrowRight:'starboard'};
+  if(km[e.key]){lookDir(km[e.key]);e.preventDefault()}
+  const n=parseInt(e.key);if(n>=1&&n<=9){const rs=Object.keys(R);if(rs[n-1])warpTo(rs[n-1])}
 });
 
-// =============================================
-// UI UPDATE
-// =============================================
-function updateUI() {
-  const room = ROOMS[currentRoomId];
-  if (!room) return;
+// ===== UI =====
+function updateUI(){
+  const rm=R[cur];if(!rm)return;
+  document.getElementById('ri').textContent=rm.t==='virtual'?'🖥️':rm.t==='composite'?'🧩':'🚪';
+  document.getElementById('rn').textContent=rm.n;
+  const tb=document.getElementById('rtb');tb.textContent=rm.t;tb.className='tb '+(rm.t==='physical'?'p':rm.t==='virtual'?'v':'c');
+  document.getElementById('crn').textContent=rm.n;document.getElementById('crd').textContent=rm.d;
+  document.getElementById('vr').textContent=rm.n;
   
-  // Title
-  document.getElementById('room-icon').textContent = room.type === 'virtual' ? '🖥️' : room.type === 'composite' ? '🧩' : '🚪';
-  document.getElementById('room-name').textContent = room.name;
-  const badge = document.getElementById('room-type-badge');
-  badge.textContent = room.type;
-  badge.className = `type-badge ${room.type}`;
+  document.getElementById('adj').innerHTML=!rm.a.length?'<span style="color:rgba(255,255,255,.12);font-size:10px">None</span>':'';
+  rm.a.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl';e.textContent='🚶 '+rr.n;e.addEventListener('click',()=>navTo(id));document.getElementById('adj').appendChild(e)});
   
-  document.getElementById('current-room-name').textContent = room.name;
-  document.getElementById('current-room-desc').textContent = room.desc;
+  document.getElementById('warp').innerHTML='';
+  const wt=[...new Set([...(rm.w||[]),...Object.keys(R).filter(id=>id!==cur)])];
+  wt.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl w';e.textContent='⚡ '+rr.n;e.addEventListener('click',()=>warpTo(id));document.getElementById('warp').appendChild(e)});
   
-  // Adjacent rooms
-  const adjDiv = document.getElementById('adjacent-rooms');
-  adjDiv.innerHTML = !room.adj.length ? '<span style="color:rgba(255,255,255,0.2);font-size:11px;">No walkable exits</span>' : '';
-  room.adj.forEach(id => {
-    const r = ROOMS[id];
-    if (!r) return;
-    const el = document.createElement('span');
-    el.className = 'room-link';
-    el.textContent = `🚶 ${r.name}`;
-    el.addEventListener('click', () => navigateTo(id));
-    adjDiv.appendChild(el);
+  const cd=document.getElementById('cams');cd.innerHTML=(rm.c||[]).length?'':'<span style="color:rgba(255,255,255,.12);font-size:10px">None</span>';
+  (rm.c||[]).forEach(cam=>{
+    const e=document.createElement('div');e.className='ce';
+    e.innerHTML=`<span class="ic">${cam.i||'📷'}</span><div class="if"><span class="lb">${cam.l}</span><span class="md">${cam.y}${cam.in?' · 🔄 interactive':''}</span></div>`;
+    if(cam.in){const b=document.createElement('span');b.textContent='INTERACTIVE';b.style.cssText='background:rgba(255,200,0,.12);color:#ffd54f;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:600';e.appendChild(b)}
+    cd.appendChild(e)
   });
   
-  // Warp
-  const warpDiv = document.getElementById('warp-rooms');
-  warpDiv.innerHTML = '';
-  const targets = [...new Set([...(room.warp||[]), ...Object.keys(ROOMS).filter(id => id !== currentRoomId)])];
-  targets.forEach(id => {
-    const r = ROOMS[id];
-    if (!r) return;
-    const el = document.createElement('span');
-    el.className = 'room-link warp';
-    el.textContent = `⚡ ${r.name}`;
-    el.addEventListener('click', () => warpTo(id));
-    warpDiv.appendChild(el);
+  document.getElementById('allr').innerHTML='';
+  Object.entries(R).forEach(([id,rr])=>{
+    const e=document.createElement('span');e.className='rl'+(id===cur?' c':'');
+    e.textContent=id===cur?'📍 '+rr.n:rr.n;if(id!==cur)e.addEventListener('click',()=>warpTo(id));
+    document.getElementById('allr').appendChild(e)
   });
   
-  // Cameras
-  const camDiv = document.getElementById('room-cameras');
-  camDiv.innerHTML = room.cams && room.cams.length ? '' : '<span style="color:rgba(255,255,255,0.2);font-size:11px;">No cameras</span>';
-  (room.cams||[]).forEach(cam => {
-    const el = document.createElement('div');
-    el.className = 'cam-entry';
-    el.innerHTML = `<span class="icon">${cam.icon||'📷'}</span><div class="info"><span class="label">${cam.label}</span><span class="mode">${cam.type}${cam.interactive ? ' · 🔄 interactive' : ''}</span></div>`;
-    if (cam.interactive) {
-      const badge = document.createElement('span');
-      badge.className = 'interactive-badge';
-      badge.textContent = 'INTERACTIVE';
-      el.appendChild(badge);
+  const sel=document.getElementById('as');sel.innerHTML='';
+  Object.entries(R).forEach(([id,rr])=>{const o=document.createElement('option');o.value=id;o.textContent=rr.n;sel.appendChild(o)});
+  
+  // Viewports
+  document.querySelectorAll('.cam-vp').forEach(v=>v.classList.remove('v'));
+  const ps=['tl','tr','bl','br'];
+  (rm.c||[]).slice(0,4).forEach((cam,i)=>{
+    const vp=document.getElementById('vp'+ps[i]);if(!vp)return;
+    vp.classList.add('v');vp.querySelector('.cn').textContent=cam.l;
+    const im=vp.querySelector('.fd img');if(im){
+      const k=cam.y==='thermal'?'thermal':cam.y==='radar'?'radar':cam.y==='ptz'&&cam.in?'gunnery':'default';
+      im.src=TX[k]||TX.default;
     }
-    camDiv.appendChild(el);
   });
-  
-  // All rooms
-  const allDiv = document.getElementById('all-rooms');
-  allDiv.innerHTML = '';
-  Object.entries(ROOMS).forEach(([id, r]) => {
-    const el = document.createElement('span');
-    el.className = 'room-link';
-    if (id === currentRoomId) {
-      el.classList.add('current');
-      el.textContent = `📍 ${r.name}`;
-    } else {
-      el.textContent = r.name;
-      el.addEventListener('click', () => warpTo(id));
-    }
-    allDiv.appendChild(el);
-  });
-  
-  // Alarm select
-  const alarmSelect = document.getElementById('alarm-room-select');
-  alarmSelect.innerHTML = '';
-  Object.entries(ROOMS).forEach(([id, r]) => {
-    const opt = document.createElement('option');
-    opt.value = id; opt.textContent = r.name;
-    alarmSelect.appendChild(opt);
-  });
-  
-  // Camera viewports
-  updateViewports(room);
+  const cv=document.getElementById('vpc');
+  if(rm.ci){cv.classList.add('v')}
   
   // Dashboards
-  updateDashboards(room);
+  document.querySelectorAll('.dash').forEach(d=>d.style.display='none');
+  (rm.db||[]).forEach(p=>{const d=document.getElementById('d'+p);if(!d)return;d.style.display='block';d.querySelectorAll('.v').forEach(g=>{const b=parseInt(g.dataset.b)||50;const v=Math.round(b+(Math.random()-.5)*15);g.textContent=v;g.style.color=v>90?'#ff5252':v>75?'#ffab40':'#69f0ae'})});
 }
 
-function updateViewports(room) {
-  document.querySelectorAll('.cam-viewport').forEach(v => v.classList.remove('visible'));
-  
-  const positions = ['tl','tr','bl','br'];
-  (room.cams||[]).slice(0,4).forEach((cam, i) => {
-    const vp = document.getElementById(`viewport-${positions[i]}`);
-    if (!vp) return;
-    vp.classList.add('visible');
-    vp.querySelector('.cam-name').textContent = cam.label;
-    const img = vp.querySelector('.feed img');
-    const label = vp.querySelector('.label-overlay');
-    if (img) {
-      const texKey = cam.type === 'thermal' ? 'thermal' : cam.type === 'radar' ? 'radar' : cam.type === 'quilted' ? 'thermal' : cam.interactive ? 'gunnery' : 'default';
-      img.src = TEXTURE_MAP[texKey] || TEXTURE_MAP.default;
-    }
-    if (label) label.textContent = `${cam.icon||''} ${cam.label} • ${cam.type}`;
-  });
-  
-  // Center viewport for gunnery
-  const center = document.getElementById('viewport-center');
-  if (room.cam_interactive) {
-    center.classList.add('visible');
-    center.querySelector('.cam-name').textContent = '🎯 Gunnery Station';
-    center.querySelector('.feed img').src = TEXTURE_MAP.gunnery;
-  }
-}
-
-function updateDashboards(room) {
-  document.querySelectorAll('.dashboard').forEach(d => d.style.display = 'none');
-  (room.dashboards||[]).forEach(pos => {
-    const dash = document.getElementById(`dash-${pos}`);
-    if (!dash) return;
-    dash.style.display = 'block';
-    dash.querySelectorAll('.gauge .val').forEach(g => {
-      const base = parseInt(g.dataset.base) || 50;
-      const val = Math.round(base + (Math.random() - 0.5) * 15);
-      g.textContent = val;
-      g.style.color = val > 90 ? '#ff5252' : val > 75 ? '#ffab40' : '#69f0ae';
-    });
-  });
-}
-
-// =============================================
-// ALARM
-// =============================================
-let alarmTimeout = null;
-function triggerAlarm(roomId) {
-  const room = ROOMS[roomId];
-  if (!room) return;
-  const notif = document.getElementById('alarm-notification');
-  notif.textContent = `🚨 ALARM: ${room.name} — Click to warp`;
-  notif.style.display = 'block';
-  if (alarmTimeout) clearTimeout(alarmTimeout);
-  alarmTimeout = setTimeout(() => { notif.style.display = 'none'; }, 8000);
-  notif.onclick = () => { notif.style.display = 'none'; warpTo(roomId); };
-}
-document.getElementById('alarm-trigger').addEventListener('click', () => {
-  triggerAlarm(document.getElementById('alarm-room-select').value);
+// Alarm
+let ato=null;
+document.getElementById('at').addEventListener('click',()=>{
+  const rm=R[document.getElementById('as').value];if(!rm)return;
+  const n=document.getElementById('al');n.textContent='🚨 ALARM: '+rm.n+' — Click to warp';n.style.display='block';
+  if(ato)clearTimeout(ato);ato=setTimeout(()=>{n.style.display='none'},8000);
+  n.onclick=()=>{n.style.display='none';warpTo(document.getElementById('as').value)};
 });
 
 // Side panel toggle
-document.getElementById('toggle-panel').addEventListener('click', () => {
-  document.getElementById('side-panel').classList.toggle('hidden');
+document.getElementById('tp').addEventListener('click',()=>document.getElementById('sp').classList.toggle('h'));
+
+// ===== VIZ PANEL =====
+document.getElementById('viz-btn').addEventListener('click',()=>document.getElementById('viz-panel').classList.toggle('o'));
+
+// Palette buttons
+document.querySelectorAll('.viz-pal button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const type=b.dataset.t;
+    const pos=[(Math.random()-.5)*3,0,(Math.random()-.5)*2.5];
+    addObject(type,type,pos);
+    addChat('system','Added a '+type+' to '+R[cur].n+' at '+pos.map(v=>v.toFixed(1)).join(', ')+'.');
+  });
 });
 
-// =============================================
-// RESIZE
-// =============================================
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+// Prompt
+document.getElementById('viz-go').addEventListener('click',()=>{
+  const inp=document.getElementById('viz-inp');const txt=inp.value.trim();if(!txt)return;
+  const res=parsePrompt(txt);
+  addChat('user',txt);
+  addChat('assistant',res||'Visualized. Try clicking objects in the palette or a different prompt.');
+  inp.value='';
 });
 
-// =============================================
-// CAM BUTTON STYLES
-// =============================================
-const style = document.createElement('style');
-style.textContent = `
-  .cam-btn {
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-    color: #eee; padding: 6px 14px; border-radius: 6px; cursor: pointer;
-    font-size: 11px; font-weight: 500; transition: all 0.15s;
-  }
-  .cam-btn:hover { background: rgba(255,255,255,0.15); }
-  .cam-btn.acquire {
-    background: rgba(255,200,0,0.15); border-color: rgba(255,200,0,0.4);
-    color: #ffd54f;
-  }
-  .cam-btn.acquire:hover { background: rgba(255,200,0,0.25); }
-`;
-document.head.appendChild(style);
+document.getElementById('viz-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('viz-go').click()});
 
-// =============================================
-// ANIMATION LOOP
-// =============================================
-function animate() {
+document.getElementById('viz-clr').addEventListener('click',()=>{clearViz();addChat('system','Cleared all mockup objects.')});
+
+// Labels checkbox
+document.getElementById('vsl').addEventListener('change',function(){/* would show/hide labels */});
+
+// Wireframe checkbox
+document.getElementById('vwi').addEventListener('change',function(){
+  wf=this.checked;if(sphere){sphere.material.wireframe=wf}
+});
+
+// Export
+document.getElementById('ve').addEventListener('click',()=>{
+  const json=JSON.stringify(objs,null,2);
+  navigator.clipboard.writeText(json).then(()=>addChat('system','Scene copied to clipboard ('+objs.length+' objects).'));
+});
+
+// ===== CHAT =====
+function addChat(role,msg){
+  const el=document.getElementById('chat-msgs');
+  if(role==='system'){
+    el.innerHTML+=`<div class="system">${msg}</div>`;
+  }else{
+    el.innerHTML+=`<div class="m"><span class="a">${role==='user'?'You':'Agent'}:</span><span class="t${role==='assistant'?' ok':''}">${msg}</span></div>`;
+  }
+  el.scrollTop=el.scrollHeight;
+}
+
+document.getElementById('chat-btn').addEventListener('click',()=>document.getElementById('chat-panel').classList.toggle('o'));
+document.getElementById('chat-close').addEventListener('click',()=>document.getElementById('chat-panel').classList.remove('o'));
+
+document.getElementById('chat-send').addEventListener('click',()=>{
+  const inp=document.getElementById('chat-input');const txt=inp.value.trim();if(!txt)return;
+  addChat('user',txt);inp.value='';
+  // Try to parse as viz command
+  const res=parsePrompt(txt);
+  if(res){addChat('assistant',res);return;}
+  // Fallback responses
+  const fbs=["I see a clear view ahead. All systems normal.","Checked engine room — temps are good. Fuel at 72%.","Radar shows a vessel 3nm to port, not on intercept course.","Want me to visualize something? Try 'add a pot hauler' or 'show fire in engine room'.","All cameras operational. No anomalies to report."];
+  setTimeout(()=>addChat('assistant',fbs[Math.floor(Math.random()*fbs.length)]),500);
+});
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('chat-send').click()});
+
+// Resize
+window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)});
+
+// ===== ANIMATE =====
+function animate(){
   requestAnimationFrame(animate);
-  
-  spherical.theta += (targetSpherical.theta - spherical.theta) * 0.1;
-  spherical.phi += (targetSpherical.phi - spherical.phi) * 0.1;
-  
-  // Camera direction (camera at origin, look towards)
-  const lookX = Math.cos(spherical.phi) * Math.sin(spherical.theta);
-  const lookY = Math.sin(spherical.phi);
-  const lookZ = Math.cos(spherical.phi) * Math.cos(spherical.theta);
-  camera.lookAt(lookX, lookY, lookZ);
-  
-  renderer.render(scene, camera);
+  sph.theta+=(ts.theta-sph.theta)*.1;sph.phi+=(ts.phi-sph.phi)*.1;
+  const lx=Math.cos(sph.phi)*Math.sin(sph.theta),ly=Math.sin(sph.phi),lz=Math.cos(sph.phi)*Math.cos(sph.theta);
+  cam.lookAt(lx,ly,lz);
+  // Animate fire particles
+  if(vizGroup)vizGroup.children.forEach(ch=>{if(ch.material&&ch.material.emissiveIntensity!==undefined)ch.material.emissiveIntensity=.4+Math.random()*.3});
+  r.render(s,cam);
 }
 
-// =============================================
-// INIT
-// =============================================
-async function init() {
-  // Preload all textures
-  const loadPromises = Object.keys(ROOMS).map(id => loadRoomTexture(id));
-  await Promise.all(loadPromises);
-  
-  // Build start room
-  buildRoom(currentRoomId);
-  updateUI();
-  
-  // Hide loading
-  document.getElementById('loading').classList.add('hidden');
-  
-  // Start animation
+// ===== INIT =====
+async function init(){
+  const loads=Object.keys(R).map(id=>loadRoomTex(id));
+  await Promise.all(loads);
+  buildRoom(cur);updateUI();
+  document.getElementById('ld').classList.add('h');
+  setInterval(()=>{const rm=R[cur];if(rm)updateDashboards(rm)},3e3);
+  addChat('system','Room Navigator loaded. Try the 🎨 Design panel for 3D mockups.');
   animate();
-  
-  // Periodic gauge update
-  setInterval(() => {
-    const room = ROOMS[currentRoomId];
-    if (room) updateDashboards(room);
-  }, 3000);
-  
-  console.log('🚢 Cocapn Vessel Room Navigator loaded');
-  console.log(`📍 Rooms: ${Object.keys(ROOMS).length} | Current: ${currentRoomId}`);
-  console.log('Drag to look · Click warp from panel · WASD for directions · 1-9 for rooms');
 }
-
 init();
+
+function updateDashboards(rm){(rm.db||[]).forEach(p=>{const d=document.getElementById('d'+p);if(!d)return;d.querySelectorAll('.v').forEach(g=>{const b=parseInt(g.dataset.b)||50;const v=Math.round(b+(Math.random()-.5)*15);g.textContent=v;g.style.color=v>90?'#ff5252':v>75?'#ffab40':'#69f0ae'})})}
+
+console.log('🚢 Vessel Room Navigator + Viz Engine loaded');
 </script>
 </body>
 </html>
