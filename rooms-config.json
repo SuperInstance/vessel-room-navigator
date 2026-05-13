@@ -1,0 +1,215 @@
+{
+  "startRoom": "wheelhouse",
+  "rooms": {
+    "wheelhouse": {
+      "name": "Wheelhouse",
+      "id": "wheelhouse",
+      "type": "physical",
+      "description": "Primary navigation and engine controls",
+      "adjacent": ["galley", "wheelhouse_roof", "engine_room"],
+      "warp": ["crow_nest", "foredeck", "aft_cockpit"],
+      "color": "#4a7fb5",
+      "directions": {
+        "fore": {"label": "Forward Window", "camera": "wheelhouse_fwd"},
+        "aft": {"label": "Aft Door", "camera": "wheelhouse_aft"},
+        "port": {"label": "Port Window", "camera": "wheelhouse_port"},
+        "starboard": {"label": "Starboard Window", "camera": "wheelhouse_stbd"},
+        "up": {"label": "Overhead Lights", "camera": null},
+        "down": {"label": "Deck Plates", "camera": null}
+      },
+      "cameras": [
+        {"id": "dashcam", "label": "Engine Dash", "type": "dashboard", "mode": "read_gauges"},
+        {"id": "radar", "label": "Radar Display", "type": "overlay", "mode": "nav"}
+      ],
+      "overlays": [
+        {"type": "dashboard", "position": "bottom", "gauges": ["RPM", "Fuel", "Temp", "Trim"]},
+        {"type": "nav", "position": "top", "data": "chart_plotter"},
+        {"type": "alarms", "position": "right"}
+      ]
+    },
+    "galley": {
+      "name": "Galley",
+      "id": "galley",
+      "type": "physical",
+      "description": "Mess and cooking area",
+      "adjacent": ["wheelhouse", "foredeck"],
+      "warp": [],
+      "color": "#d4a55a",
+      "directions": {
+        "fore": {"label": "Forward Bulkhead", "camera": null},
+        "aft": {"label": "Wheelhouse Door", "camera": null},
+        "port": {"label": "Port Galley Wall", "camera": null},
+        "starboard": {"label": "Starboard Galley Wall", "camera": null},
+        "up": {"label": "Galley Lights", "camera": null},
+        "down": {"label": "Galley Floor", "camera": null}
+      },
+      "cameras": [],
+      "overlays": []
+    },
+    "foredeck": {
+      "name": "Foredeck",
+      "id": "foredeck",
+      "type": "physical",
+      "description": "Forward exterior deck",
+      "adjacent": ["galley", "crow_nest"],
+      "warp": [],
+      "color": "#7cb342",
+      "directions": {
+        "fore": {"label": "Bow", "camera": "bow_cam"},
+        "aft": {"label": "Aft to Galley", "camera": null},
+        "port": {"label": "Port Rail", "camera": null},
+        "starboard": {"label": "Starboard Rail", "camera": null},
+        "up": {"label": "Sky", "camera": null},
+        "down": {"label": "Deck", "camera": null}
+      },
+      "cameras": [
+        {"id": "bow_cam", "label": "Bow Camera", "type": "ptz", "mode": "lookout"}
+      ],
+      "overlays": []
+    },
+    "aft_cockpit": {
+      "name": "Aft Cockpit",
+      "id": "aft_cockpit",
+      "type": "physical",
+      "description": "Aft work deck - hauling and gear",
+      "adjacent": ["engine_room"],
+      "warp": ["wheelhouse"],
+      "color": "#8d6e63",
+      "directions": {
+        "fore": {"label": "Engine Room Door", "camera": null},
+        "aft": {"label": "Stern", "camera": "stern_cam"},
+        "port": {"label": "Port Rail", "camera": null},
+        "starboard": {"label": "Starboard Rail", "camera": null},
+        "up": {"label": "Overhead", "camera": null},
+        "down": {"label": "Deck", "camera": null}
+      },
+      "cameras": [
+        {"id": "stern_cam", "label": "Stern Camera", "type": "ptz", "mode": "workdeck"},
+        {"id": "nav_display", "label": "Nav Display", "type": "overlay", "mode": "simplified_nav"}
+      ],
+      "overlays": [
+        {"type": "nav", "position": "center", "mode": "simplified", "fontSize": "large"}
+      ]
+    },
+    "engine_room": {
+      "name": "Engine Room",
+      "id": "engine_room",
+      "type": "physical",
+      "description": "Engine compartment - main power",
+      "adjacent": ["wheelhouse", "aft_cockpit"],
+      "warp": ["wheelhouse"],
+      "color": "#c62828",
+      "directions": {
+        "fore": {"label": "Forward Bulkhead", "camera": "thermal_fwd"},
+        "aft": {"label": "Aft Bulkhead", "camera": "thermal_aft"},
+        "port": {"label": "Port Engine", "camera": "engine_port"},
+        "starboard": {"label": "Starboard Engine", "camera": "engine_stbd"},
+        "up": {"label": "Engine Room Top", "camera": null},
+        "down": {"label": "Bilge", "camera": null}
+      },
+      "cameras": [
+        {"id": "engine_port", "label": "Port Engine", "type": "thermal", "mode": "monitor"},
+        {"id": "engine_stbd", "label": "Starboard Engine", "type": "thermal", "mode": "monitor"},
+        {"id": "thermal_fwd", "label": "Forward Thermal", "type": "thermal", "mode": "overview"},
+        {"id": "thermal_aft", "label": "Aft Thermal", "type": "thermal", "mode": "overview"}
+      ],
+      "overlays": [
+        {"type": "gauges", "position": "right", "gauges": ["Engine1 Temp", "Engine2 Temp", "Exhaust Temp", "Oil Pressure"]}
+      ]
+    },
+    "wheelhouse_roof": {
+      "name": "Wheelhouse Roof",
+      "id": "wheelhouse_roof",
+      "type": "physical",
+      "description": "Exterior roof above wheelhouse",
+      "adjacent": ["wheelhouse", "crow_nest"],
+      "warp": [],
+      "color": "#5c6bc0",
+      "directions": {
+        "fore": {"label": "Forward View", "camera": "roof_fwd"},
+        "aft": {"label": "Aft View", "camera": "roof_aft"},
+        "port": {"label": "Port View", "camera": "roof_port"},
+        "starboard": {"label": "Starboard View", "camera": "roof_stbd"},
+        "up": {"label": "Sky", "camera": null},
+        "down": {"label": "Wheelhouse Below", "camera": null}
+      },
+      "cameras": [
+        {"id": "pano_roof", "label": "Roof Panorama", "type": "quilted", "mode": "panorama"}
+      ],
+      "overlays": []
+    },
+    "crow_nest": {
+      "name": "Crow's Nest",
+      "id": "crow_nest",
+      "type": "physical",
+      "description": "Mast lookout position - highest point",
+      "adjacent": ["foredeck", "wheelhouse_roof"],
+      "warp": ["wheelhouse"],
+      "color": "#ff8f00",
+      "directions": {
+        "fore": {"label": "Forward Lookout", "camera": "cn_fwd"},
+        "aft": {"label": "Aft Lookout", "camera": "cn_aft"},
+        "port": {"label": "Port Lookout", "camera": "cn_port"},
+        "starboard": {"label": "Starboard Lookout", "camera": "cn_stbd"},
+        "up": {"label": "Mast Top", "camera": null},
+        "down": {"label": "Deck Below", "camera": null}
+      },
+      "cameras": [
+        {"id": "cn_ptz", "label": "PTZ Lookout", "type": "ptz", "mode": "gunnery", "interactive": true}
+      ],
+      "overlays": [
+        {"type": "reticle", "position": "center", "mode": "gunnery"}
+      ],
+      "cam_interactive": true
+    },
+    "alarm_center": {
+      "name": "Alarm Center",
+      "id": "alarm_center",
+      "type": "virtual",
+      "description": "Composite alarm monitoring room",
+      "adjacent": [],
+      "warp": [],
+      "color": "#e53935",
+      "directions": {
+        "fore": {"label": "Alarm Board", "camera": null},
+        "aft": {"label": "Alert History", "camera": null},
+        "port": {"label": "Engine Status", "camera": null},
+        "starboard": {"label": "Nav Status", "camera": null},
+        "up": {"label": "System Health", "camera": null},
+        "down": {"label": "Camera Grid", "camera": null}
+      },
+      "cameras": [
+        {"id": "alarm_board", "label": "Alarm Board", "type": "dashboard", "mode": "grid"}
+      ],
+      "overlays": [
+        {"type": "alarm_grid", "position": "full"}
+      ]
+    },
+    "four_cam": {
+      "name": "4-Camera Wall",
+      "id": "four_cam",
+      "type": "composite",
+      "description": "Composite display - 4 most useful angles",
+      "adjacent": [],
+      "warp": [],
+      "color": "#00897b",
+      "directions": {
+        "fore": {"label": "Cam 1: Bow", "camera": "bow_cam"},
+        "aft": {"label": "Cam 2: Aft Deck", "camera": "stern_cam"},
+        "port": {"label": "Cam 3: Engine Status", "camera": "engine_port"},
+        "starboard": {"label": "Cam 4: Radar", "camera": null},
+        "up": {"label": "ROOF Cam", "camera": "pano_roof"},
+        "down": {"label": "Thermal Overview", "camera": "thermal_fwd"}
+      },
+      "cameras": [
+        {"id": "composite_bow", "label": "Bow", "type": "composite_feed", "source": "bow_cam"},
+        {"id": "composite_stern", "label": "Stern", "type": "composite_feed", "source": "stern_cam"},
+        {"id": "composite_engine", "label": "Engines", "type": "composite_feed", "source": "engine_port"},
+        {"id": "composite_radar", "label": "Radar", "type": "composite_feed", "source": "radar"}
+      ],
+      "overlays": [
+        {"type": "grid", "position": "full", "layout": "2x2"}
+      ]
+    }
+  }
+}
