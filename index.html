@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="https://superinstance.github.io/vessel-room-navigator/social-preview.jpg" type="image/jpeg">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Cocapn Vessel Room Navigator</title>
+
+<meta name="description" content="Your boat as a navigable 3D web space — ScummVM meets Google Street View. Walk rooms, warp instantly, monitor cameras, design 3D mockups.">
+<meta property="og:title" content="Cocapn Vessel Room Navigator">
+<meta property="og:description" content="Your boat as a navigable 3D web space. Walk between rooms, warp instantly, monitor cameras, and design mockups — all in your browser.">
+<meta property="og:image" content="https://superinstance.github.io/vessel-room-navigator/social-preview.jpg">
+<meta property="og:url" content="https://superinstance.github.io/vessel-room-navigator/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cocapn Vessel Room Navigator">
+<meta name="twitter:description" content="Your boat as a navigable 3D web space. Walk rooms, warp instantly, monitor cameras, design mockups.">
+<meta name="twitter:image" content="https://superinstance.github.io/vessel-room-navigator/social-preview.jpg">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#050510;overflow:hidden;font-family:'SF Pro Display','Segoe UI',system-ui,sans-serif;color:#fff;user-select:none;-webkit-font-smoothing:antialiased}
@@ -294,11 +306,14 @@ function buildRoom(id) {
   if (sphere) { scene.remove(sphere); sphere.geometry.dispose(); sphere.material.dispose(); sphere = null }
   const rm = R[id]; if (!rm) return;
   const geo = new THREE.SphereGeometry(50,64,64); geo.scale(-1,1,1);
+  const tex = texCache[rm.tx];
   const mat = new THREE.MeshBasicMaterial({
-    map: texCache[rm.tx] || null,
-    color: texCache[rm.tx] ? undefined : 0x1a1a2e,
+    map: tex || null,
+    color: tex ? undefined : parseInt(rm.color || '0x1a1a2e'),
     side: THREE.BackSide
   });
+  // Fallback color if texture load fails
+  if (!tex) mat.color.set(rm.color || '#1a1a2e');
   sphere = new THREE.Mesh(geo, mat); scene.add(sphere);
   renderViz();
 }
