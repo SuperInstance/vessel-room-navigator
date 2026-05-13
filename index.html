@@ -3,583 +3,601 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Cocapn Vessel Room Navigator + Viz Engine</title>
+<title>Cocapn Vessel Room Navigator</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#050510;overflow:hidden;font-family:'SF Pro Display','Segoe UI',system-ui,sans-serif;color:#fff;user-select:none}
-#c{width:100vw;height:100vh;position:fixed;top:0;left:0}
+body{background:#050510;overflow:hidden;font-family:'SF Pro Display','Segoe UI',system-ui,sans-serif;color:#fff;user-select:none;-webkit-font-smoothing:antialiased}
+
+/* Loading splash */
+#splash{position:fixed;inset:0;z-index:999;background:#050510;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s}
+#splash.hidden{opacity:0;pointer-events:none}
+#splash .ring{width:56px;height:56px;border:2px solid rgba(255,255,255,.04);border-top-color:#64b4ff;border-radius:50%;animation:sr .8s cubic-bezier(.4,0,.2,1) infinite;margin-bottom:20px}
+@keyframes sr{to{transform:rotate(360deg)}}
+#splash .boat{font-size:48px;margin-bottom:4px;animation:float 2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#splash p{font-size:12px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase}
+#splash .bar{width:120px;height:2px;background:rgba(255,255,255,.04);border-radius:1px;margin-top:16px;overflow:hidden}
+#splash .bar-in{height:100%;width:0%;background:linear-gradient(90deg,#64b4ff,#69f0ae);border-radius:1px;animation:fill 1.5s ease-out forwards}
+@keyframes fill{to{width:100%}}
+
+#c{position:fixed;inset:0}
+canvas{display:block}
+
+/* Transition overlay */
+#trans{position:fixed;inset:0;z-index:50;background:#050510;opacity:0;pointer-events:none;transition:opacity .25s ease}
+#trans.active{opacity:1}
+
 /* HUD */
-#h{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
-#h>*{pointer-events:auto}
-#rt{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(5,5,16,.82);padding:10px 24px;border-radius:10px;font-size:16px;font-weight:700;border:1px solid rgba(255,255,255,.07);backdrop-filter:blur(20px);box-shadow:0 4px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:8px}
-.tb{padding:2px 7px;border-radius:4px;font-size:8px;font-weight:600;text-transform:uppercase}
-.tb.p{background:rgba(76,175,80,.2);color:#69f0ae;border:1px solid rgba(76,175,80,.3)}
-.tb.v{background:rgba(33,150,243,.2);color:#82b1ff;border:1px solid rgba(33,150,243,.3)}
-.tb.c{background:rgba(255,152,0,.2);color:#ffd54f;border:1px solid rgba(255,152,0,.3)}
-#ld{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;text-align:center}
-#ld .sp{width:40px;height:40px;border:3px solid rgba(255,255,255,.08);border-top:3px solid #64b4ff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-#ld p{font-size:12px;color:rgba(255,255,255,.4)}
-#ld.h{display:none}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+#hud>*{pointer-events:auto}
+
+#rt{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(5,5,16,.7);padding:8px 20px;border-radius:10px;font-size:15px;font-weight:600;border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 4px 32px rgba(0,0,0,.4);display:flex;align-items:center;gap:8px;transition:opacity .3s}
+#rt .dot{width:6px;height:6px;border-radius:50%;background:#69f0ae;box-shadow:0 0 6px rgba(105,240,174,.4);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.tb{padding:1px 7px;border-radius:3px;font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.tb.p{background:rgba(76,175,80,.15);color:#69f0ae;border:1px solid rgba(76,175,80,.2)}
+.tb.v{background:rgba(33,150,243,.15);color:#82b1ff;border:1px solid rgba(33,150,243,.2)}
+.tb.c{background:rgba(255,152,0,.15);color:#ffd54f;border:1px solid rgba(255,152,0,.2)}
 
 /* Compass */
-#cp{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);display:flex;gap:2px;background:rgba(5,5,16,.7);padding:5px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.05);backdrop-filter:blur(12px)}
-#cp button{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:9px;font-weight:600;transition:all .15s;text-transform:uppercase;letter-spacing:.6px}
-#cp button:hover{background:rgba(255,255,255,.08);color:#fff}
-#cp button.a{background:rgba(100,180,255,.15);border-color:#64b4ff;color:#64b4ff}
+#cp{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:2px;background:rgba(5,5,16,.55);padding:4px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.04);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+#cp button{background:rgba(255,255,255,.02);border:1px solid transparent;color:rgba(255,255,255,.35);padding:6px 12px;border-radius:5px;cursor:pointer;font-size:8px;font-weight:600;transition:all .2s;text-transform:uppercase;letter-spacing:.8px}
+#cp button:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.08)}
+#cp button.a{background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.25);color:#64b4ff}
 
-#ins{position:fixed;bottom:54px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.12);z-index:5;text-align:center}
+/* Bottom bar */
+#bb{position:fixed;bottom:0;left:0;right:0;height:56px;background:linear-gradient(180deg,transparent,rgba(5,5,16,.6));pointer-events:none;z-index:8}
 
-/* Viz toggle */
-#viz-btn{position:fixed;top:72px;right:310px;z-index:20;background:rgba(5,5,16,.75);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.6);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:16px;backdrop-filter:blur(12px);transition:all .15s}
-#viz-btn:hover{background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.3)}
-
-/* Viz panel */
-#viz-panel{position:fixed;bottom:0;left:0;width:100%;height:0;background:rgba(5,5,16,.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);z-index:20;transition:height .3s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
-#viz-panel.o{height:260px}
-.viz-h{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04)}
-.viz-h span{font-size:12px;font-weight:600;color:rgba(255,255,255,.6)}
-.viz-h .r{font-size:10px;color:rgba(255,255,255,.25)}
-.viz-body{display:flex;flex:1;overflow:hidden}
-.viz-left{flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
-.viz-right{width:200px;padding:10px 14px;border-left:1px solid rgba(255,255,255,.04);overflow-y:auto}
-.viz-prompts{display:flex;gap:6px}
-.viz-prompts input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;outline:none}
-.viz-prompts input:focus{border-color:rgba(100,180,255,.4)}
-.viz-prompts button{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600}
-#viz-go{background:#64b4ff;color:#fff}
-#viz-go:hover{background:#4a9ce0}
-#viz-clear{background:rgba(255,255,255,.06);color:rgba(255,255,255,.5)}
-#viz-clear:hover{background:rgba(255,255,255,.1);color:#fff}
-
-.viz-pal{display:flex;gap:4px;flex-wrap:wrap}
-.viz-pal button{padding:5px 10px;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.6);cursor:pointer;font-size:10px;transition:all .12s}
-.viz-pal button:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.2);color:#fff}
-.viz-pal button.drop{background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.3);color:#64b4ff}
-
-.viz-scene-header{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.25);margin-bottom:6px}
-#viz-count{font-weight:600}
-#viz-export{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px}
-#viz-export:hover{background:rgba(255,255,255,.08)}
-.viz-obj{padding:4px 8px;margin:2px 0;border-radius:4px;font-size:10px;background:rgba(255,255,255,.03);display:flex;align-items:center;gap:6px}
-.viz-obj .name{flex:1;color:rgba(255,255,255,.5)}
-.viz-obj .del{color:rgba(255,100,100,.5);cursor:pointer;font-size:12px}
-.viz-obj .del:hover{color:#ff5252}
-
-.viz-opts{display:flex;flex-wrap:wrap;gap:8px;padding:6px 0}
-.viz-opts label{font-size:10px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:4px;cursor:pointer}
-.viz-opts input[type=checkbox]{accent-color:#64b4ff}
-
-/* Object tooltips in 3D */
-.obj-label{color:#64ffda;font-size:10px;font-weight:600;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:3px;pointer-events:none}
-
-/* Cam viewports */
-.cam-vp{position:fixed;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.06);backdrop-filter:blur(6px);z-index:5;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-.cam-vp.v{display:flex}
-.cam-vp .hd{padding:3px 8px;font-size:9px;color:rgba(255,255,255,.4);background:rgba(0,0,0,.5);display:flex;align-items:center;gap:5px}
-.cam-vp .fd{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);min-height:80px;position:relative}
-.cam-vp .fd img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
-.vp-tl{top:72px;left:12px;width:200px;height:130px}
-.vp-tr{top:72px;right:310px;width:200px;height:130px}
-.vp-bl{bottom:280px;left:12px;width:200px;height:130px}
-.vp-br{bottom:280px;right:310px;width:200px;height:130px}
-.vp-c{top:50%;left:50%;transform:translate(-50%,-50%);width:340px;height:220px;z-index:7}
-
-/* Dashboards */
-.dash{position:fixed;background:rgba(5,5,16,.7);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px 16px;z-index:6;box-shadow:0 4px 20px rgba(0,0,0,.3);display:none}
-.dash-t{top:68px;left:50%;transform:translateX(-50%)}
-.dash-b{bottom:280px;left:50%;transform:translateX(-50%)}
-.dash-r{top:50%;right:310px;transform:translateY(-50%)}
-.dash h4{font-size:8px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.2);margin-bottom:6px;font-weight:600}
-.gr{display:flex;gap:12px}
-.g{text-align:center;min-width:40px}
-.g .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
-.g .l{font-size:7px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
-
-/* Alarm */
-#al{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:rgba(230,57,70,.82);backdrop-filter:blur(14px);padding:12px 24px;border-radius:8px;font-weight:600;z-index:30;display:none;cursor:pointer;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(230,57,70,.3);animation:ap 1.5s ease-in-out infinite;font-size:13px}
-@keyframes ap{0%,100%{box-shadow:0 8px 32px rgba(230,57,70,.3)}50%{box-shadow:0 8px 48px rgba(230,57,70,.6)}}
-#wo{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:25;opacity:0;pointer-events:none;transition:opacity .2s}
-#wo.s{opacity:1}
+/* Panel toggles */
+.p-btn{position:fixed;z-index:20;background:rgba(5,5,16,.55);border:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.5);padding:6px 10px;border-radius:7px;cursor:pointer;font-size:13px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:all .2s;pointer-events:auto}
+.p-btn:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.1)}
+#tp-btn{top:16px;right:16px}
+#chat-btn{bottom:68px;left:16px}
+#viz-btn{top:68px;right:16px}
 
 /* Side panel */
-#sp{position:fixed;right:0;top:0;height:100%;width:270px;background:rgba(5,5,16,.9);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,.05);padding:80px 14px 16px;overflow-y:auto;transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(0);z-index:15}
+#sp{position:fixed;right:0;top:0;bottom:0;width:280px;background:rgba(5,5,16,.85);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-left:1px solid rgba(255,255,255,.04);padding:80px 16px 20px;overflow-y:auto;transition:transform .35s cubic-bezier(.4,0,.2,1);transform:translateX(0);z-index:15}
 #sp.h{transform:translateX(100%)}
 #sp::-webkit-scrollbar{width:2px}
-#sp::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
-#tp{position:fixed;right:10px;top:16px;z-index:16;background:rgba(5,5,16,.75);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.6);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;backdrop-filter:blur(12px)}
-.ps{margin-bottom:16px}
-.ps h3{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.25);margin-bottom:8px;font-weight:600}
-.rl{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;margin:2px;border-radius:5px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:rgba(160,200,255,.7);cursor:pointer;font-size:11px;font-weight:500;transition:all .12s}
-.rl:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.25);color:#fff}
-.rl.w{background:rgba(255,200,0,.05);border-color:rgba(255,200,0,.12);color:#ffd54f}
-.rl.w:hover{background:rgba(255,200,0,.1)}
-.rl.c{background:rgba(100,255,218,.07);border-color:rgba(100,255,218,.15);color:#69f0ae}
+#sp::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
 
-.ce{padding:6px 8px;margin:3px 0;border-radius:5px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:11px;display:flex;align-items:center;gap:6px}
-.ce .ic{font-size:14px}
+.sec{margin-bottom:18px}
+.sec h3{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.2);margin-bottom:8px;font-weight:600}
+.rl{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;margin:2px;border-radius:5px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);color:rgba(160,200,255,.6);cursor:pointer;font-size:10px;font-weight:500;transition:all .15s}
+.rl:hover{background:rgba(100,180,255,.08);border-color:rgba(100,180,255,.2);color:#fff}
+.rl.w{border-color:rgba(255,200,0,.1);color:#ffd54f}
+.rl.w:hover{background:rgba(255,200,0,.08);border-color:rgba(255,200,0,.2)}
+.rl.c{background:rgba(100,255,218,.05);border-color:rgba(100,255,218,.12);color:#69f0ae}
+.ce{padding:5px 8px;margin:3px 0;border-radius:5px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);font-size:10px;display:flex;align-items:center;gap:6px}
 .ce .if{flex:1}
 .ce .lb{color:#64b4ff;font-weight:500}
-.ce .md{color:rgba(255,255,255,.3);font-size:9px;display:block}
+.ce .md{color:rgba(255,255,255,.25);font-size:8px;display:block}
+#crd{font-size:10px;color:rgba(255,255,255,.3);margin-bottom:6px;line-height:1.4}
 
 /* Chat panel */
-#chat-panel{position:fixed;bottom:0;left:0;width:420px;height:0;background:rgba(5,5,16,.88);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);border-radius:0 8px 0 0;z-index:18;transition:height .25s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
-#chat-panel.o{height:280px}
-#chat-btn{position:fixed;bottom:116px;left:16px;z-index:19;background:rgba(5,5,16,.7);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;backdrop-filter:blur(12px)}
-#chat-btn:hover{background:rgba(100,180,255,.1);border-color:rgba(100,180,255,.2)}
-.chat-h{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
-.chat-h span{font-size:11px;font-weight:600;color:rgba(255,255,255,.5)}
-.chat-h button{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px}
-.chat-h button:hover{background:rgba(255,255,255,.08)}
-.chat-msgs{flex:1;overflow-y:auto;padding:8px 14px;font-size:11px;line-height:1.5}
-.chat-msgs .m{margin-bottom:6px;display:flex;gap:8px}
-.chat-msgs .m .a{color:rgba(255,255,255,.4);font-weight:600;min-width:40px}
-.chat-msgs .m .t{color:rgba(255,255,255,.7)}
-.chat-msgs .m .t.ok{color:#69f0ae}
-.chat-msgs .system{color:rgba(100,180,255,.5);font-style:italic;font-size:10px;padding:2px 0}
-.chat-in{display:flex;gap:4px;padding:6px 10px;border-top:1px solid rgba(255,255,255,.04)}
-.chat-in input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;outline:none}
-.chat-in input:focus{border-color:rgba(100,180,255,.3)}
-.chat-in button{padding:6px 12px;border-radius:4px;border:none;background:#64b4ff;color:#fff;cursor:pointer;font-size:11px;font-weight:600}
+#chat{position:fixed;bottom:0;left:0;width:380px;height:0;background:rgba(5,5,16,.82);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);border-radius:0 8px 0 0;z-index:18;transition:height .25s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
+#chat.o{height:300px}
+.ch-h{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.ch-h span{font-size:10px;font-weight:600;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:6px}
+.ch-h button{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.35);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:8px}
+.ch-msgs{flex:1;overflow-y:auto;padding:8px 14px;font-size:11px;line-height:1.6}
+.ch-msgs::-webkit-scrollbar{width:2px}
+.ch-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+.ch-msgs .m{margin-bottom:5px;display:flex;gap:8px;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.ch-msgs .m .s{color:rgba(255,255,255,.3);font-weight:600;min-width:36px;font-size:10px}
+.ch-msgs .m .t{color:rgba(255,255,255,.65)}
+.ch-msgs .m .t.ok{color:#69f0ae}
+.ch-msgs .sys{color:rgba(100,180,255,.4);font-style:italic;font-size:9px;padding:4px 0}
+.ch-in{display:flex;gap:4px;padding:6px 10px;border-top:1px solid rgba(255,255,255,.04)}
+.ch-in input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:#fff;padding:7px 10px;border-radius:5px;font-size:11px;outline:none;transition:border-color .2s}
+.ch-in input:focus{border-color:rgba(100,180,255,.25)}
+.ch-in button{padding:7px 14px;border-radius:5px;border:none;background:#64b4ff;color:#fff;cursor:pointer;font-size:10px;font-weight:600;transition:background .15s}
+.ch-in button:hover{background:#4a9ce0}
 
+/* Viz panel */
+#viz{position:fixed;bottom:0;right:0;width:400px;height:0;background:rgba(5,5,16,.82);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.04);border-left:1px solid rgba(255,255,255,.04);border-radius:8px 0 0 0;z-index:18;transition:height .25s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
+#viz.o{height:300px}
+.v-h{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;color:rgba(255,255,255,.4);font-weight:600}
+.v-body{display:flex;flex:1;overflow:hidden}
+.v-left{flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.v-in{display:flex;gap:4px}
+.v-in input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:#fff;padding:6px 10px;border-radius:5px;font-size:10px;outline:none}
+.v-in input:focus{border-color:rgba(100,180,255,.25)}
+.v-in button{padding:6px 12px;border-radius:5px;border:none;cursor:pointer;font-size:9px;font-weight:600}
+#v-go{background:#64b4ff;color:#fff}
+#v-clear{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4)}
+.pal{display:flex;gap:3px;flex-wrap:wrap}
+.pal button{padding:4px 8px;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.45);cursor:pointer;font-size:9px;transition:all .12s}
+.pal button:hover{background:rgba(100,180,255,.08);border-color:rgba(100,180,255,.15);color:#fff}
+.v-right{width:170px;padding:8px 12px;border-left:1px solid rgba(255,255,255,.04);overflow-y:auto}
+.v-right::-webkit-scrollbar{width:2px}
+.v-right::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+.v-scene-h{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.2);margin-bottom:6px}
+#v-count{font-weight:600}
+.v-obj{padding:3px 6px;margin:2px 0;border-radius:3px;font-size:9px;background:rgba(255,255,255,.02);display:flex;align-items:center;gap:4px;transition:background .15s}
+.v-obj:hover{background:rgba(255,255,255,.04)}
+.v-obj .vn{flex:1;color:rgba(255,255,255,.4)}
+.v-obj .vd{color:#ff5252;cursor:pointer;opacity:0;transition:opacity .15s;font-size:10px}
+.v-obj:hover .vd{opacity:.6}
+.v-obj .vd:hover{opacity:1}
+
+/* Dashes */
+.dash{position:fixed;background:rgba(5,5,16,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.04);border-radius:8px;padding:8px 14px;z-index:6;box-shadow:0 4px 24px rgba(0,0,0,.2);display:none;transition:opacity .3s}
+.dash-t{top:68px;left:50%;transform:translateX(-50%)}
+.dash-b{bottom:80px;left:50%;transform:translateX(-50%)}
+.dash-r{top:50%;right:300px;transform:translateY(-50%)}
+.dash h4{font-size:7px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.15);margin-bottom:5px;font-weight:600}
+.gr{display:flex;gap:10px}
+.g{text-align:center;min-width:36px}
+.g .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2;transition:color .3s}
+.g .l{font-size:6px;color:rgba(255,255,255,.2);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+
+/* Viewports */
+.vp{position:fixed;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.05);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:5;display:none;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.3);opacity:0;transition:opacity .4s}
+.vp.v{display:flex;opacity:1}
+.vp .hd{padding:3px 8px;font-size:8px;color:rgba(255,255,255,.35);background:rgba(0,0,0,.4);display:flex;align-items:center;gap:4px}
+.vp .fd{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);min-height:70px;position:relative}
+.vp .fd img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.vp-tl{top:72px;left:12px;width:180px;height:110px}
+.vp-tr{top:72px;right:300px;width:180px;height:110px}
+.vp-bl{bottom:72px;left:12px;width:180px;height:110px}
+.vp-br{bottom:72px;right:300px;width:180px;height:110px}
+.vp-c{top:50%;left:50%;transform:translate(-50%,-50%)scale(.95);width:320px;height:200px;z-index:7}
+.vp-c.v{transform:translate(-50%,-50%)scale(1)}
+.vp .lo{position:absolute;bottom:3px;left:6px;font-size:7px;color:rgba(255,255,255,.2)}
+
+/* Alarm */
+#al{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:rgba(230,57,70,.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:10px 20px;border-radius:8px;font-weight:600;z-index:30;display:none;cursor:pointer;border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 32px rgba(230,57,70,.2);animation:ap 1.5s ease infinite;font-size:12px}
+@keyframes ap{0%,100%{box-shadow:0 8px 32px rgba(230,57,70,.15)}50%{box-shadow:0 8px 48px rgba(230,57,70,.35)}}
+
+/* Responsive */
 @media(max-width:768px){
   #sp{width:220px}
-  .vp-tl,.vp-tr,.vp-bl,.vp-br{width:120px;height:80px}
-  .vp-tr{right:240px}.vp-br{right:240px}
+  .vp-tl,.vp-tr,.vp-bl,.vp-br{width:120px;height:80px}.vp-tr{right:240px}.vp-br{right:240px}
   .dash-r{right:240px}
-  #cp button{padding:4px 6px;font-size:7px}
   #rt{font-size:13px;padding:6px 14px}
-  #viz-panel.o{height:200px}
-  .viz-right{width:140px}
-  #chat-panel{width:300px}
-  #chat-panel.o{height:220px}
+  #chat{width:300px}#chat.o{height:260px}
+  #viz{width:320px}#viz.o{height:260px}.v-right{width:120px}
+  #cp button{padding:4px 8px;font-size:7px}
 }
 </style>
 </head>
 <body>
-<div id="ld"><div class="sp"></div><p>Loading vessel rooms...</p></div>
+
+<div id="splash">
+  <div class="boat">🚢</div>
+  <p>Loading vessel rooms</p>
+  <div class="bar"><div class="bar-in"></div></div>
+</div>
+
 <div id="c"></div>
+<div id="trans"></div>
 
-<div id="h">
-  <div id="rt"><span id="ri">🚪</span><span id="rn">Wheelhouse</span><span class="tb p" id="rtb">physical</span></div>
+<div id="hud">
+  <div id="rt"><div class="dot"></div><span id="rn">Wheelhouse</span><span class="tb p" id="rtb">physical</span></div>
   <div id="cp">
-    <button data-l="fore">↑ Fore</button><button data-l="aft">↓ Aft</button>
-    <button data-l="port">← Port</button><button data-l="starboard">→ Stbd</button>
+    <button data-l="fore">↑ Fore</button>
+    <button data-l="aft">↓ Aft</button>
+    <button data-l="port">← Port</button>
+    <button data-l="starboard">→ Stbd</button>
   </div>
-  <div id="ins">Drag to look · Compass/1-9 for directions · Panel for warp</div>
-  <div id="al"></div><div id="wo"></div>
-  <div id="tp">☰</div>
+  <div id="bb"></div>
+  <div id="al"></div>
 </div>
 
-<div class="cam-vp vp-tl" id="vptl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
-<div class="cam-vp vp-tr" id="vptr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
-<div class="cam-vp vp-bl" id="vpbl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
-<div class="cam-vp vp-br" id="vpbr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img src=""><span class="lo" style="position:absolute;bottom:4px;left:6px;font-size:8px;color:rgba(255,255,255,.3)"></span></div></div>
-<div class="cam-vp vp-c" id="vpc"><div class="hd">🎯 <span class="cn">Gunnery</span></div><div class="fd" style="justify-content:center;align-items:center;"><img src="textures/cam_gunnery.jpg"><div style="position:absolute;bottom:8px;display:flex;gap:6px;z-index:2"><button class="cb">🔍 +</button><button class="cb" style="background:rgba(255,200,0,.15);border-color:rgba(255,200,0,.3);color:#ffd54f">🎯 Acq</button></div></div></div>
+<div class="vp vp-tl" id="vptl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img><span class="lo"></span></div></div>
+<div class="vp vp-tr" id="vptr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img><span class="lo"></span></div></div>
+<div class="vp vp-bl" id="vpbl"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img><span class="lo"></span></div></div>
+<div class="vp vp-br" id="vpbr"><div class="hd">📷 <span class="cn"></span></div><div class="fd"><img><span class="lo"></span></div></div>
+<div class="vp vp-c" id="vpc"><div class="hd">🎯 <span class="cn">Gunnery</span></div><div class="fd"><img src="textures/cam_gunnery.jpg"><div style="position:absolute;bottom:6px;display:flex;gap:4px;z-index:2"><button class="cb">🔍 +</button><button class="cb" style="background:rgba(255,200,0,.12);border-color:rgba(255,200,0,.3);color:#ffd54f">🎯</button></div></div></div>
 
-<div class="dash dash-b" id="db"><h4>⚙ ENGINE DASH</h4><div class="gr"><div class="g"><div class="v" data-b="1800">1800</div><div class="l">RPM</div></div><div class="g"><div class="v" data-b="72">72</div><div class="l">FUEL%</div></div><div class="g"><div class="v" data-b="185">185</div><div class="l">TEMP</div></div><div class="g"><div class="v" data-b="3">3</div><div class="l">TRIM</div></div></div></div>
-<div class="dash dash-t" id="dt"><h4>🧭 NAV</h4><div class="gr"><div class="g"><div class="v" data-b="273">273</div><div class="l">HDG</div></div><div class="g"><div class="v" data-b="12">12</div><div class="l">SPD</div></div><div class="g"><div class="v" data-b="42">42</div><div class="l">DPTH</div></div><div class="g"><div class="v" data-b="18">18</div><div class="l">WIND</div></div></div></div>
-<div class="dash dash-r" id="dr"><h4>🔥 ENG MONITOR</h4><div class="gr"><div class="g"><div class="v" data-b="185">185</div><div class="l">E1T</div></div><div class="g"><div class="v" data-b="182">182</div><div class="l">E2T</div></div><div class="g"><div class="v" data-b="320">320</div><div class="l">EXH</div></div><div class="g"><div class="v" data-b="55">55</div><div class="l">OIL</div></div></div></div>
+<div class="dash dash-b" id="db"><h4>⚙ ENGINE</h4><div class="gr"><div class="g"><div class="v" data-b="1800">-</div><div class="l">RPM</div></div><div class="g"><div class="v" data-b="72">-</div><div class="l">FUEL</div></div><div class="g"><div class="v" data-b="185">-</div><div class="l">TEMP</div></div><div class="g"><div class="v" data-b="3">-</div><div class="l">TRIM</div></div></div></div>
+<div class="dash dash-t" id="dt"><h4>🧭 NAV</h4><div class="gr"><div class="g"><div class="v" data-b="273">-</div><div class="l">HDG</div></div><div class="g"><div class="v" data-b="12">-</div><div class="l">SPD</div></div><div class="g"><div class="v" data-b="42">-</div><div class="l">DPTH</div></div><div class="g"><div class="v" data-b="18">-</div><div class="l">WIND</div></div></div></div>
+<div class="dash dash-r" id="dr"><h4>🔥 ENGINE MON</h4><div class="gr"><div class="g"><div class="v" data-b="185">-</div><div class="l">E1</div></div><div class="g"><div class="v" data-b="182">-</div><div class="l">E2</div></div><div class="g"><div class="v" data-b="320">-</div><div class="l">EXH</div></div><div class="g"><div class="v" data-b="55">-</div><div class="l">OIL</div></div></div></div>
 
-<!-- Footer panels -->
-<button id="chat-btn">💬</button>
-<div id="chat-panel">
-  <div class="chat-h"><span>💬 Chat with Room Agent</span><button id="chat-close">✕</button></div>
-  <div class="chat-msgs" id="chat-msgs">
-    <div class="system">Room Navigator loaded. Try: "add a table" or "mock up a net drum"</div>
+<!-- Buttons -->
+<button class="p-btn" id="tp-btn">☰</button>
+<button class="p-btn" id="chat-btn">💬</button>
+<button class="p-btn" id="viz-btn">🎨</button>
+
+<!-- Chat -->
+<div id="chat">
+  <div class="ch-h"><span>💬 Agent</span><button id="ch-cl">✕</button></div>
+  <div class="ch-msgs" id="ch-msgs">
+    <div class="sys">Room Navigator loaded. Try "add a winch" or "show smoke".</div>
   </div>
-  <div class="chat-in">
-    <input id="chat-input" placeholder='e.g. "add a pot hauler" or "show a fire in engine room"...'>
-    <button id="chat-send">Send</button>
-  </div>
+  <div class="ch-in"><input id="ch-inp" placeholder="Type a command..."><button id="ch-send">↵</button></div>
 </div>
 
-<div id="sp">
-  <div class="ps"><h3>📍 <span id="crn">Wheelhouse</span></h3><p id="crd" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:6px"></p></div>
-  <div class="ps"><h3>🚶 Adjacent</h3><div id="adj"></div></div>
-  <div class="ps"><h3>⚡ Warp</h3><div id="warp"></div></div>
-  <div class="ps"><h3>📷 Cameras</h3><div id="cams"></div></div>
-  <div class="ps"><h3>🏠 All Rooms</h3><div id="allr"></div></div>
-  <div class="ps"><h3>🚨 Test Alarm</h3><div style="display:flex;gap:4px"><select id="as" style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.7);padding:5px 6px;border-radius:4px;font-size:10px"></select><button id="at" style="background:#c62828;color:#fff;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">🚨</button></div></div>
-</div>
-
-<div id="viz-btn" title="Toggle Visualizer">🎨 Design</div>
-<div id="viz-panel">
-  <div class="viz-h"><span>🎨 Rapid Visualizer</span><span class="r">Objects in <span id="vr">Wheelhouse</span></span></div>
-  <div class="viz-body">
-    <div class="viz-left">
-      <div class="viz-prompts">
-        <input id="viz-inp" placeholder='"add a winch on the foredeck" or "show smoke in engine room"'>
-        <button id="viz-go">Run</button>
-        <button id="viz-clr">✕</button>
-      </div>
-      <div class="viz-pal">
+<!-- Viz -->
+<div id="viz">
+  <div class="v-h"><span>🎨 Design</span><span style="font-weight:400">in <span id="vr">Wheelhouse</span></span></div>
+  <div class="v-body">
+    <div class="v-left">
+      <div class="v-in"><input id="v-inp" placeholder='"add a drum" or "show smoke in engine room"'><button id="v-go">→</button><button id="v-cl">✕</button></div>
+      <div class="pal">
         <button data-t="box">📦 Box</button><button data-t="cyl">🛢️ Drum</button>
-        <button data-t="sph">⭕ Sphere</button><button data-t="tor">⭮ Torus</button>
-        <button data-t="cone">🔺 Cone</button><button data-t="crew">🧑 Crew</button>
-        <button data-t="fire">🔥 Fire</button><button data-t="label">🏷️ Label</button>
-      </div>
-      <div class="viz-opts">
-        <label><input type="checkbox" id="vsl"> Show labels</label>
-        <label><input type="checkbox" id="vwi"> Wireframe room</label>
+        <button data-t="sph">⭕ Buoy</button><button data-t="tor">⭮ Wheel</button>
+        <button data-t="cone">🔺 Vent</button><button data-t="fire">🔥 Fire</button>
+        <button data-t="crew">🧑 Crew</button><button data-t="label">🏷️ Label</button>
       </div>
     </div>
-    <div class="viz-right">
-      <div class="viz-scene-header"><span id="vc">0 objects</span><button id="ve">📋 Export</button></div>
-      <div id="vo"></div>
+    <div class="v-right">
+      <div class="v-scene-h"><span id="v-count">0 objects</span></div>
+      <div id="v-list"></div>
     </div>
   </div>
 </div>
 
-<style>.cb{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#eee;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:10px}
-.cb:hover{background:rgba(255,255,255,.12)}</style>
+<!-- Side panel -->
+<div id="sp">
+  <div class="sec"><h3>📍 <span id="crn">Wheelhouse</span></h3><p id="crd"></p></div>
+  <div class="sec"><h3>🚶 Walk</h3><div id="adj"></div></div>
+  <div class="sec"><h3>⚡ Warp</h3><div id="wrp"></div></div>
+  <div class="sec"><h3>📷 Cameras</h3><div id="cml"></div></div>
+  <div class="sec"><h3>🏠 All Rooms</h3><div id="all"></div></div>
+  <div class="sec"><h3>🚨 Test Alarm</h3><div style="display:flex;gap:4px"><select id="as" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.6);padding:4px 6px;border-radius:4px;font-size:9px"></select><button id="at" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:9px;font-weight:600">🚨</button></div></div>
+</div>
+
+<style>.cb{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:9px}
+.cb:hover{background:rgba(255,255,255,.1)}</style>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
-
 <script type="module">
 import * as THREE from 'three';
 
-// ===== ROOM CONFIG =====
-const R={
-  wheelhouse:{n:"Wheelhouse",t:"physical",d:"Navigation & engine controls",a:["galley","wheelhouse_roof","engine_room"],w:["crow_nest","foredeck","aft_cockpit"],tx:"textures/pano_wheelhouse.jpg",c:[{id:"d",l:"Engine Dash",i:"📊",y:"dash"},{id:"r",l:"Radar",i:"📡",y:"radar"}],db:["b","t","r"]},
-  galley:{n:"Galley",t:"physical",d:"Mess & cooking",a:["wheelhouse","foredeck"],w:[],tx:"textures/pano_galley.jpg",c:[],db:[]},
-  foredeck:{n:"Foredeck",t:"physical",d:"Forward deck",a:["galley","crow_nest"],w:[],tx:"textures/pano_foredeck.jpg",c:[{id:"b",l:"Bow Cam",i:"🎥",y:"ptz"}],db:[]},
-  aft_cockpit:{n:"Aft Cockpit",t:"physical",d:"Work deck",a:["engine_room"],w:["wheelhouse"],tx:"textures/pano_aft_cockpit.jpg",c:[{id:"sc",l:"Stern Cam",i:"🎥",y:"ptz"},{id:"nd",l:"Nav Display",i:"🧭",y:"nav"}],db:["c"]},
-  engine_room:{n:"Engine Room",t:"physical",d:"Main power",a:["wheelhouse","aft_cockpit"],w:["wheelhouse"],tx:"textures/pano_engine_room.jpg",c:[{id:"ep",l:"Port Eng",i:"🔥",y:"thermal"},{id:"es",l:"Stbd Eng",i:"🔥",y:"thermal"},{id:"tf",l:"Fwd Thermal",i:"🌡️",y:"thermal"},{id:"ta",l:"Aft Thermal",i:"🌡️",y:"thermal"}],db:["r"]},
-  wheelhouse_roof:{n:"Wheelhouse Roof",t:"physical",d:"Overhead deck",a:["wheelhouse","crow_nest"],w:[],tx:"textures/pano_wheelhouse_roof.jpg",c:[{id:"pr",l:"Pano",i:"🔄",y:"quilted"}],db:[]},
-  crow_nest:{n:"Crow's Nest",t:"physical",d:"Lookout",a:["foredeck","wheelhouse_roof"],w:["wheelhouse"],tx:"textures/pano_crows_nest.jpg",c:[{id:"cn",l:"🔭 PTZ",i:"🔭",y:"ptz",in:true}],db:[],ci:true},
-  alarm_center:{n:"Alarm Center",t:"virtual",d:"Composite monitoring",a:[],w:[],tx:"textures/pano_wheelhouse.jpg",c:[{id:"ab",l:"Board",i:"🚨",y:"dash"}],db:[]},
-  four_cam:{n:"4-Camera Wall",t:"composite",d:"Multi-angle display",a:[],w:[],tx:"textures/pano_wheelhouse.jpg",c:[{id:"cb",l:"Bow",i:"🎥",y:"cmp"},{id:"cs",l:"Stern",i:"🎥",y:"cmp"},{id:"ce",l:"Engines",i:"🔥",y:"cmp"},{id:"cr",l:"Radar",i:"📡",y:"cmp"}],db:[]}
+// ===== CONFIG =====
+const TXT_BASE = "textures/";
+const R = {
+  wheelhouse:{n:"Wheelhouse",t:"physical",d:"Navigation & engine controls",a:["galley","wheelhouse_roof","engine_room"],w:["crow_nest","foredeck","aft_cockpit"],tx:"pano_wheelhouse",c:[{l:"Engine Dash",i:"📊",y:"dash"},{l:"Radar",i:"📡",y:"radar"}],db:["b","t","r"]},
+  galley:{n:"Galley",t:"physical",d:"Mess & cooking area",a:["wheelhouse","foredeck"],w:[],tx:"pano_galley",c:[],db:[]},
+  foredeck:{n:"Foredeck",t:"physical",d:"Forward deck & bow area",a:["galley","crow_nest"],w:[],tx:"pano_foredeck",c:[{l:"Bow Camera",i:"🎥",y:"ptz"}],db:[]},
+  aft_cockpit:{n:"Aft Cockpit",t:"physical",d:"Work deck — hauling & gear",a:["engine_room"],w:["wheelhouse"],tx:"pano_aft_cockpit",c:[{l:"Stern Cam",i:"🎥",y:"ptz"},{l:"Nav Display",i:"🧭",y:"nav"}],db:["c"]},
+  engine_room:{n:"Engine Room",t:"physical",d:"Main power — twin diesel",a:["wheelhouse","aft_cockpit"],w:["wheelhouse"],tx:"pano_engine_room",c:[{l:"Port Engine",i:"🔥",y:"thermal"},{l:"Stbd Engine",i:"🔥",y:"thermal"},{l:"Fwd Thermal",i:"🌡️",y:"thermal"},{l:"Aft Thermal",i:"🌡️",y:"thermal"}],db:["r"]},
+  wheelhouse_roof:{n:"Wheelhouse Roof",t:"physical",d:"Overhead observation deck",a:["wheelhouse","crow_nest"],w:[],tx:"pano_wheelhouse_roof",c:[{l:"Panorama",i:"🔄",y:"quilted"}],db:[]},
+  crow_nest:{n:"Crow's Nest",t:"physical",d:"Lookout — highest point",a:["foredeck","wheelhouse_roof"],w:["wheelhouse"],tx:"pano_crows_nest",c:[{l:"🔭 PTZ",i:"🔭",y:"ptz",in:true}],db:[],ci:true},
+  alarm_center:{n:"Alarm Center",t:"virtual",d:"Composite alarm monitoring",a:[],w:[],tx:"pano_wheelhouse",c:[{l:"Alarm Board",i:"🚨",y:"dash"}],db:[]},
+  four_cam:{n:"4-Camera Wall",t:"composite",d:"Multi-angle display",a:[],w:[],tx:"pano_wheelhouse",c:[{l:"Bow",i:"🎥",y:"cmp"},{l:"Stern",i:"🎥",y:"cmp"},{l:"Engines",i:"🔥",y:"cmp"},{l:"Radar",i:"📡",y:"cmp"}],db:[]}
 };
-const TX={"thermal":"textures/cam_thermal.jpg","gunnery":"textures/cam_gunnery.jpg","radar":"textures/cam_radar.jpg","default":"textures/cam_thermal.jpg"};
 
-// ===== THREE.JS =====
-const c=document.getElementById('c'),s=new THREE.Scene;
-const cam=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1e3);cam.position.set(0,0,0);
-const r=new THREE.WebGLRenderer({antialias:true});
-r.setSize(innerWidth,innerHeight);r.setPixelRatio(Math.min(devicePixelRatio,2));r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.9;
-c.appendChild(r.domElement);
+const TX_MAP = {thermal:"cam_thermal",radar:"cam_radar",ptz:"",gunnery:"cam_gunnery",default:"cam_thermal",nav:"cam_radar",dash:"cam_thermal",quilted:"cam_thermal",cmp:"cam_thermal"};
+
+// ===== THREE =====
+const renderer = new THREE.WebGLRenderer({antialias:true,depth:false,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = .9;
+document.getElementById('c').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,200);
+cam.position.set(0,0,0);
 
 // ===== STATE =====
-let cur="wheelhouse",walking=false;
-const sph={theta:0,phi:0},ts={theta:0,phi:0};
-let sphere=null,vizGroup=null,spriteGroup=null,wf=false;
+let cur = "wheelhouse", walking = false;
+const sph = {theta:0,phi:0}, tgt = {theta:0,phi:0};
+let sphere = null, vizGroup = null;
+const tl = new THREE.TextureLoader();
+const texCache = {};
+const objs = [];
 
-// ===== TEXTURES =====
-const tl=new THREE.TextureLoader,texs={};
-function loadRoomTex(id){
-  const rm=R[id];if(!rm)return;
-  return new Promise(r=>tl.load(rm.tx,t=>{t.colorSpace=THREE.SRGBColorSpace;texs[id]=t;r(t)},null,()=>r(null)));
+// ===== TEXTURE LOADER =====
+async function loadTex(name) {
+  if (texCache[name]) return texCache[name];
+  return new Promise(r => tl.load(TXT_BASE+name+'.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; texCache[name]=t; r(t) }, null, () => r(null)));
 }
 
-// ===== ROOM RENDER =====
-function buildRoom(id){
-  if(sphere){s.remove(sphere);sphere.geometry.dispose();sphere.material.dispose();sphere=null}
-  const rm=R[id];if(!rm)return;
-  const g=new THREE.SphereGeometry(50,64,64);g.scale(-1,1,1);
-  const tx=texs[id];
-  const m=new THREE.MeshBasicMaterial({map:tx||undefined,color:tx?undefined:new THREE.Color(rm.t||"#333"),side:THREE.BackSide});
-  sphere=new THREE.Mesh(g,m);s.add(sphere);
-  if(wf)sphere.material.wireframe=true;
-}
-
-// ===== VIZ ENGINE =====
-const objs=[];
-const PALETTE={
-  box:(p)=>({type:"box",c:p.c||"#64b4ff",w:p.w||1,h:p.h||.6,d:p.d||.8}),
-  cyl:(p)=>({type:"cyl",c:p.c||"#8d6e63",r:p.r||.5,h:p.h||.6}),
-  sph:(p)=>({type:"sph",c:p.c||"#ffd54f",r:p.r||.5}),
-  tor:(p)=>({type:"tor",c:p.c||"#78909c",r:p.r||.6,t:p.t||.15}),
-  cone:(p)=>({type:"cone",c:p.c||"#ff8f00",r:p.r||.4,h:p.h||.8}),
-  fire:()=>({type:"fire",c:"#ff4400",h:1.2}),
-  crew:()=>({type:"crew",c:"#64ffda",h:1.6}),
-  label:(p)=>({type:"label",t:p.t||"Label",c:p.c||"#fff"})
-};
-
-function addObject(type,label,pos,props){
-  const id="obj_"+(objs.length+1);
-  const base=PALETTE[type]?.(props||{});
-  if(!base)return;
-  objs.push({id,type,label:label||type,pos:pos||[0,0,0],...base});
-  renderViz();
-  updateObjList();
-}
-
-function renderViz(){
-  if(vizGroup){s.remove(vizGroup);vizGroup.traverse(c=>{if(c.isMesh){c.geometry.dispose();c.material.dispose()}});vizGroup=null}
-  if(spriteGroup){s.remove(spriteGroup);spriteGroup=null}
-  if(!objs.length)return;
-  vizGroup=new THREE.Group;
-  objs.forEach(o=>{
-    const p=o.pos;
-    if(o.type==="box"){
-      const g=new THREE.BoxGeometry(o.w,o.h,o.d);
-      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.7,metalness:.3});
-      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
-    }else if(o.type==="cyl"){
-      const g=new THREE.CylinderGeometry(o.r,o.r,o.h,24);
-      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.4});
-      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
-    }else if(o.type==="sph"){
-      const g=new THREE.SphereGeometry(o.r,24,24);
-      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.3,metalness:.1});
-      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.r,p[2]);vizGroup.add(mesh);
-    }else if(o.type==="tor"){
-      const g=new THREE.TorusGeometry(o.r,o.t,16,32);
-      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.5,metalness:.5});
-      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.r,p[2]);vizGroup.add(mesh);
-    }else if(o.type==="cone"){
-      const g=new THREE.ConeGeometry(o.r,o.h,24);
-      const m=new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.3});
-      const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0],p[1]+o.h/2,p[2]);vizGroup.add(mesh);
-    }else if(o.type==="fire"){
-      // Particle-ish fire: stack red/orange/yellow cones
-      for(let i=0;i<5;i++){
-        const g=new THREE.ConeGeometry(.15-i*.02,o.h*.4-Math.random()*.2,8);
-        const m=new THREE.MeshStandardMaterial({color:["#ff4400","#ff6600","#ff8800","#ffaa00","#ffcc00"][i],emissive:["#ff2200","#ff4400","#ff6600","#ff8800","#ffaa00"][i],emissiveIntensity:.4+Math.random()*.3,transparent:true,opacity:.7+Math.random()*.3});
-        const mesh=new THREE.Mesh(g,m);mesh.position.set(p[0]+(Math.random()-.5)*.3,p[1]+i*.2,p[2]+(Math.random()-.5)*.3);
-        vizGroup.add(mesh);
-      }
-    }else if(o.type==="crew"){
-      // Simple person: cylinder body + sphere head
-      const bg=new THREE.CylinderGeometry(.25,.25,1,8);
-      const bm=new THREE.MeshStandardMaterial({color:o.c});
-      const body=new THREE.Mesh(bg,bm);body.position.set(p[0],p[1]+.5,p[2]);vizGroup.add(body);
-      const sg=new THREE.SphereGeometry(.15,8,8);
-      const sm=new THREE.MeshStandardMaterial({color:"#ffccaa"});
-      const head=new THREE.Mesh(sg,sm);head.position.set(p[0],p[1]+1.1,p[2]);vizGroup.add(head);
-    }
+// ===== ROOM =====
+function buildRoom(id) {
+  if (sphere) { scene.remove(sphere); sphere.geometry.dispose(); sphere.material.dispose(); sphere = null }
+  const rm = R[id]; if (!rm) return;
+  const geo = new THREE.SphereGeometry(50,64,64); geo.scale(-1,1,1);
+  const mat = new THREE.MeshBasicMaterial({
+    map: texCache[rm.tx] || null,
+    color: texCache[rm.tx] ? undefined : 0x1a1a2e,
+    side: THREE.BackSide
   });
-  s.add(vizGroup);
+  sphere = new THREE.Mesh(geo, mat); scene.add(sphere);
+  renderViz();
 }
 
-function updateObjList(){
-  const el=document.getElementById('vo');
-  document.getElementById('vc').textContent=objs.length+" objects";
-  if(!objs.length){el.innerHTML='<div style="color:rgba(255,255,255,.15);font-size:10px">No objects. Use palette or type a prompt.</div>';return}
-  el.innerHTML=objs.map((o,i)=>`<div class="viz-obj"><span class="name">${o.label||o.type}</span><span style="color:rgba(255,255,255,.2);font-size:9px">${o.pos.map(v=>v.toFixed(1)).join(',')}</span><span class="del" data-i="${i}">✕</span></div>`).join('');
-  el.querySelectorAll('.del').forEach(d=>d.addEventListener('click',()=>{
-    objs.splice(parseInt(d.dataset.i),1);renderViz();updateObjList();
-  }));
+// ===== NAV =====
+function trans(id) {
+  if (walking || !R[id] || id === cur) return;
+  walking = true;
+  document.getElementById('trans').classList.add('active');
+  setTimeout(() => {
+    cur = id; buildRoom(id); updateUI();
+    document.getElementById('trans').classList.remove('active');
+    walking = false;
+  }, 250);
+}
+function warpTo(id) {
+  if (!R[id] || id === cur) return;
+  walking = true;
+  document.getElementById('trans').classList.add('active');
+  setTimeout(() => {
+    cur = id; buildRoom(id); updateUI();
+    document.getElementById('trans').classList.remove('active');
+    walking = false;
+    tgt.theta = 0; tgt.phi = 0;
+    sph.theta = 0; sph.phi = 0;
+  }, 200);
 }
 
-function clearViz(){
-  objs.length=0;renderViz();updateObjList();
+function lookDir(d) {
+  const m = {fore:{theta:0,phi:0},aft:{theta:Math.PI,phi:0},port:{theta:Math.PI/2,phi:0},starboard:{theta:-Math.PI/2,phi:0}};
+  if (!m[d]) return;
+  Object.assign(tgt, m[d]);
+  document.querySelectorAll('#cp button').forEach(b => b.classList.remove('a'));
+  document.querySelector(`#cp button[data-l="${d}"]`)?.classList.add('a');
 }
+document.querySelectorAll('#cp button').forEach(b => b.addEventListener('click',()=>lookDir(b.dataset.l)));
 
-// ===== CHAT PROMPT PARSER =====
-function parsePrompt(txt){
-  const t=txt.toLowerCase();
-  // Pattern: "add [type] [optional with props]"
-  const typeMap={box:"box",drum:"cyl",cylinder:"cyl",winch:"cyl",wheel:"tor",table:"box",crate:"box",console:"box",buoy:"sph",light:"sph",tank:"sph",funnel:"cone",vent:"cone",cone:"cone",fire:"fire",smoke:"fire",flame:"fire",crew:"crew",person:"crew",man:"crew"};
-  
-  // Try to match
-  let type=null,label=null;
-  for(const [word,vt] of Object.entries(typeMap)){
-    if(t.includes(word)){type=vt;label=word;break;}
-  }
-  if(type==="fire"||t.includes("mock")||t.includes("simulate")||t.includes("show")){
-    // Random position in room
-    const pos=[(Math.random()-.5)*4,0,(Math.random()-.5)*3];
-    addObject(type||"box",label||txt.slice(0,15),pos);
-    const names={box:"crate",cyl:"drum",sph:"buoy",tor:"wheel",cone:"vent",fire:"fire",crew:"crew"};
-    return `Rendered a ${names[type]||type} in ${R[cur].n}. Try moving it or adding more objects.`;
-  }
-  return null;
-}
-
-// ===== NAVIGATION =====
-function navTo(id){
-  if(walking||!R[id]||id===cur)return;
-  walking=true;document.getElementById('wo').classList.add('s');
-  setTimeout(()=>{cur=id;buildRoom(id);updateUI();renderViz();document.getElementById('wo').classList.remove('s');walking=false},250);
-}
-function warpTo(id){
-  if(!R[id]||id===cur)return;
-  walking=true;document.getElementById('wo').classList.add('s');
-  setTimeout(()=>{cur=id;buildRoom(id);updateUI();renderViz();document.getElementById('wo').classList.remove('s');walking=false;ts.theta=0;ts.phi=0;sph.theta=0;sph.phi=0},200);
-}
-function lookDir(d){
-  const m={fore:{theta:0,phi:0},aft:{theta:Math.PI,phi:0},port:{theta:Math.PI/2,phi:0},starboard:{theta:-Math.PI/2,phi:0}};
-  if(m[d]){Object.assign(ts,m[d]);document.querySelectorAll('#cp button').forEach(b=>b.classList.remove('a'));document.querySelector(`#cp button[data-l="${d}"]`)?.classList.add('a')}
-}
-document.querySelectorAll('#cp button').forEach(b=>b.addEventListener('click',()=>lookDir(b.dataset.l)));
-
-// Mouse
-let drag=false,pm={x:0,y:0},tsc=null;
-r.domElement.addEventListener('mousedown',e=>{drag=false;pm={x:e.clientX,y:e.clientY}});
-r.domElement.addEventListener('mousemove',e=>{if(e.buttons!==1)return;const dx=e.clientX-pm.x,dy=e.clientY-pm.y;if(Math.abs(dx)>2||Math.abs(dy)>2)drag=true;ts.theta-=dx*.005;ts.phi-=dy*.005;ts.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,ts.phi));pm={x:e.clientX,y:e.clientY};document.querySelectorAll('#cp button').forEach(b=>b.classList.remove('a'))});
-r.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1)tsc={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
-r.domElement.addEventListener('touchmove',e=>{if(e.touches.length===1&&tsc){ts.theta-=(e.touches[0].clientX-tsc.x)*.005;ts.phi-=(e.touches[0].clientY-tsc.y)*.005;ts.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,ts.phi));tsc={x:e.touches[0].clientX,y:e.touches[0].clientY}}},{passive:true});
-r.domElement.addEventListener('touchend',()=>{tsc=null});
-
-// Keyboard
+// ===== CONTROLS =====
+let drag = false, pm = {x:0,y:0}, ts = null;
+renderer.domElement.addEventListener('mousedown',e=>{drag=false;pm={x:e.clientX,y:e.clientY}});
+renderer.domElement.addEventListener('mousemove',e=>{
+  if(e.buttons!==1)return;
+  const dx=e.clientX-pm.x,dy=e.clientY-pm.y;
+  if(Math.abs(dx)>2||Math.abs(dy)>2)drag=true;
+  tgt.theta-=dx*.005; tgt.phi-=dy*.005;
+  tgt.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,tgt.phi));
+  pm={x:e.clientX,y:e.clientY};
+  document.querySelectorAll('#cp button').forEach(b=>b.classList.remove('a'));
+});
+renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1)ts={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
+renderer.domElement.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&ts){tgt.theta-=(e.touches[0].clientX-ts.x)*.005;tgt.phi-=(e.touches[0].clientY-ts.y)*.005;tgt.phi=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,tgt.phi));ts={x:e.touches[0].clientX,y:e.touches[0].clientY}}
+},{passive:true});
+renderer.domElement.addEventListener('touchend',()=>{ts=null});
 document.addEventListener('keydown',e=>{
   const km={w:'fore',ArrowUp:'fore',s:'aft',ArrowDown:'aft',a:'port',ArrowLeft:'port',d:'starboard',ArrowRight:'starboard'};
   if(km[e.key]){lookDir(km[e.key]);e.preventDefault()}
-  const n=parseInt(e.key);if(n>=1&&n<=9){const rs=Object.keys(R);if(rs[n-1])warpTo(rs[n-1])}
+  const n=parseInt(e.key);
+  if(n>=1&&n<=9){const rs=Object.keys(R);if(rs[n-1])warpTo(rs[n-1])}
 });
 
+// ===== VIZ ENGINE =====
+const PAL = {
+  box:p=>({t:"box",c:p.c||"#64b4ff",w:p.w||.8,h:p.h||.5,d:p.d||.6}),
+  cyl:p=>({t:"cyl",c:p.c||"#8d6e63",r:p.r||.4,h:p.h||.5}),
+  sph:p=>({t:"sph",c:p.c||"#ffd54f",r:p.r||.4}),
+  tor:p=>({t:"tor",c:p.c||"#78909c",r:p.r||.5,th:p.th||.12}),
+  cone:p=>({t:"cone",c:p.c||"#ff8f00",r:p.r||.35,h:p.h||.6}),
+  fire:()=>({t:"fire",c:"#ff4400",h:1}),
+  crew:()=>({t:"crew",c:"#64ffda",h:1.4}),
+  label:p=>({t:"label",l:p.l||"Label",c:p.c||"#fff"})
+};
+
+function addObj(type,label,pos,props) {
+  const base = PAL[type]?.(props||{});
+  if (!base) return;
+  objs.push({id:"o"+(objs.length+1),type,label:label||type,pos:pos||[(Math.random()-.5)*3,0,(Math.random()-.5)*2.5],...base});
+  renderViz(); updateList();
+}
+
+function renderViz() {
+  if (vizGroup) { scene.remove(vizGroup); vizGroup.traverse(c=>{if(c.isMesh){c.geometry.dispose();c.material.dispose()}}); vizGroup=null }
+  if (!objs.length) return;
+  vizGroup = new THREE.Group();
+  objs.forEach(o => {
+    const p = o.pos;
+    let mesh = null;
+    if (o.t === "box") {
+      const g = new THREE.BoxGeometry(o.w,o.h,o.d);
+      const m = new THREE.MeshStandardMaterial({color:o.c,roughness:.7,metalness:.3});
+      mesh = new THREE.Mesh(g,m); mesh.position.set(p[0],p[1]+o.h/2,p[2]);
+    } else if (o.t === "cyl") {
+      const g = new THREE.CylinderGeometry(o.r,o.r,o.h,24);
+      const m = new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.4});
+      mesh = new THREE.Mesh(g,m); mesh.position.set(p[0],p[1]+o.h/2,p[2]);
+    } else if (o.t === "sph") {
+      const g = new THREE.SphereGeometry(o.r,24,24);
+      const m = new THREE.MeshStandardMaterial({color:o.c,roughness:.3,metalness:.1});
+      mesh = new THREE.Mesh(g,m); mesh.position.set(p[0],p[1]+o.r,p[2]);
+    } else if (o.t === "tor") {
+      const g = new THREE.TorusGeometry(o.r,o.th,16,32);
+      const m = new THREE.MeshStandardMaterial({color:o.c,roughness:.5,metalness:.5});
+      mesh = new THREE.Mesh(g,m); mesh.position.set(p[0],p[1]+o.r,p[2]);
+    } else if (o.t === "cone") {
+      const g = new THREE.ConeGeometry(o.r,o.h,24);
+      const m = new THREE.MeshStandardMaterial({color:o.c,roughness:.6,metalness:.3});
+      mesh = new THREE.Mesh(g,m); mesh.position.set(p[0],p[1]+o.h/2,p[2]);
+    } else if (o.t === "fire") {
+      for (let i=0;i<5;i++) {
+        const g = new THREE.ConeGeometry(.12-i*.015,o.h*.35-Math.random()*.15,8);
+        const m = new THREE.MeshStandardMaterial({color:["#ff4400","#ff6600","#ff8800","#ffaa00","#ffcc00"][i],emissive:["#ff2200","#ff4400","#ff6600","#ff8800","#ffaa00"][i],emissiveIntensity:.4+Math.random()*.3,transparent:true,opacity:.7+Math.random()*.3});
+        mesh = new THREE.Mesh(g,m); mesh.position.set(p[0]+(Math.random()-.5)*.25,p[1]+i*.18,p[2]+(Math.random()-.5)*.25);
+        vizGroup.add(mesh);
+      }
+      return;
+    } else if (o.t === "crew") {
+      const bg = new THREE.CylinderGeometry(.2,.2,.8,8);
+      const bm = new THREE.MeshStandardMaterial({color:o.c});
+      mesh = new THREE.Mesh(bg,bm); mesh.position.set(p[0],p[1]+.4,p[2]); vizGroup.add(mesh);
+      const sg = new THREE.SphereGeometry(.12,8,8);
+      const sm = new THREE.MeshStandardMaterial({color:"#ffccaa"});
+      mesh = new THREE.Mesh(sg,sm); mesh.position.set(p[0],p[1]+.9,p[2]);
+    }
+    if (mesh) vizGroup.add(mesh);
+  });
+  scene.add(vizGroup);
+}
+
+function updateList() {
+  document.getElementById('v-count').textContent = objs.length+' objects';
+  const el = document.getElementById('v-list');
+  if (!objs.length) { el.innerHTML = '<div style="color:rgba(255,255,255,.12);font-size:9px">Click pallette or type a prompt</div>'; return }
+  el.innerHTML = objs.map((o,i)=>`<div class="v-obj"><span class="vn">${o.label}</span><span class="vd" data-i="${i}">✕</span></div>`).join('');
+  el.querySelectorAll('.vd').forEach(d=>d.addEventListener('click',()=>{objs.splice(parseInt(d.dataset.i),1);renderViz();updateList()}));
+}
+
+function clearObjs() { objs.length = 0; renderViz(); updateList(); }
+
+function parsePrompt(txt) {
+  const t = txt.toLowerCase();
+  const map = {box:"box",drum:"cyl",cylinder:"cyl",winch:"cyl",wheel:"tor",table:"box",crate:"box",console:"box",buoy:"sph",light:"sph",tank:"sph",funnel:"cone",vent:"cone",fire:"fire",smoke:"fire",flame:"fire",crew:"crew",person:"crew",man:"crew",label:"label"};
+  let type = null;
+  for (const [w,v] of Object.entries(map)) { if (t.includes(w)) { type=v; break } }
+  if (type === "label") { addObj("label","Label",[(Math.random()-.5)*3,.5,(Math.random()-.5)*2.5],{l:txt.replace("label","").trim()||"Label"}); return `Label placed in ${R[cur].n}.` }
+  if (type) { addObj(type,type,[(Math.random()-.5)*3,0,(Math.random()-.5)*2.5]); const ns={box:"box",cyl:"drum",sph:"buoy",tor:"wheel",cone:"vent",fire:"fire",crew:"crew"}; return `Added a ${ns[type]||type} to ${R[cur].n}.` }
+  return null;
+}
+
 // ===== UI =====
-function updateUI(){
-  const rm=R[cur];if(!rm)return;
-  document.getElementById('ri').textContent=rm.t==='virtual'?'🖥️':rm.t==='composite'?'🧩':'🚪';
-  document.getElementById('rn').textContent=rm.n;
-  const tb=document.getElementById('rtb');tb.textContent=rm.t;tb.className='tb '+(rm.t==='physical'?'p':rm.t==='virtual'?'v':'c');
-  document.getElementById('crn').textContent=rm.n;document.getElementById('crd').textContent=rm.d;
-  document.getElementById('vr').textContent=rm.n;
+function updateUI() {
+  const rm = R[cur]; if (!rm) return;
+  document.getElementById('rn').textContent = rm.n;
+  const tb = document.getElementById('rtb'); tb.textContent = rm.t; tb.className = 'tb '+(rm.t==='physical'?'p':rm.t==='virtual'?'v':'c');
+  document.getElementById('crn').textContent = rm.n; document.getElementById('crd').textContent = rm.d;
+  document.getElementById('vr').textContent = rm.n;
   
-  document.getElementById('adj').innerHTML=!rm.a.length?'<span style="color:rgba(255,255,255,.12);font-size:10px">None</span>':'';
-  rm.a.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl';e.textContent='🚶 '+rr.n;e.addEventListener('click',()=>navTo(id));document.getElementById('adj').appendChild(e)});
+  // Adjacent
+  document.getElementById('adj').innerHTML = !rm.a.length ? '<span style="color:rgba(255,255,255,.1);font-size:9px">None</span>' : '';
+  rm.a.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl';e.textContent='🚶 '+rr.n;e.addEventListener('click',()=>trans(id));document.getElementById('adj').appendChild(e)});
   
-  document.getElementById('warp').innerHTML='';
-  const wt=[...new Set([...(rm.w||[]),...Object.keys(R).filter(id=>id!==cur)])];
-  wt.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl w';e.textContent='⚡ '+rr.n;e.addEventListener('click',()=>warpTo(id));document.getElementById('warp').appendChild(e)});
+  // Warp
+  document.getElementById('wrp').innerHTML = '';
+  const wt = [...new Set([...(rm.w||[]),...Object.keys(R).filter(id=>id!==cur)])];
+  wt.forEach(id=>{const rr=R[id];if(!rr)return;const e=document.createElement('span');e.className='rl w';e.textContent='⚡ '+rr.n;e.addEventListener('click',()=>warpTo(id));document.getElementById('wrp').appendChild(e)});
   
-  const cd=document.getElementById('cams');cd.innerHTML=(rm.c||[]).length?'':'<span style="color:rgba(255,255,255,.12);font-size:10px">None</span>';
+  // Cameras
+  const cl = document.getElementById('cml'); cl.innerHTML = !(rm.c||[]).length ? '<span style="color:rgba(255,255,255,.1);font-size:9px">None</span>' : '';
   (rm.c||[]).forEach(cam=>{
     const e=document.createElement('div');e.className='ce';
-    e.innerHTML=`<span class="ic">${cam.i||'📷'}</span><div class="if"><span class="lb">${cam.l}</span><span class="md">${cam.y}${cam.in?' · 🔄 interactive':''}</span></div>`;
-    if(cam.in){const b=document.createElement('span');b.textContent='INTERACTIVE';b.style.cssText='background:rgba(255,200,0,.12);color:#ffd54f;padding:1px 5px;border-radius:2px;font-size:7px;font-weight:600';e.appendChild(b)}
-    cd.appendChild(e)
+    e.innerHTML=`<span style="font-size:12px">${cam.i||'📷'}</span><div class="if"><span class="lb">${cam.l}</span><span class="md">${cam.y}</span></div>`;
+    cl.appendChild(e);
   });
   
-  document.getElementById('allr').innerHTML='';
+  // All rooms
+  document.getElementById('all').innerHTML = '';
   Object.entries(R).forEach(([id,rr])=>{
     const e=document.createElement('span');e.className='rl'+(id===cur?' c':'');
-    e.textContent=id===cur?'📍 '+rr.n:rr.n;if(id!==cur)e.addEventListener('click',()=>warpTo(id));
-    document.getElementById('allr').appendChild(e)
+    e.textContent = id===cur?'📍 '+rr.n:rr.n;
+    if(id!==cur) e.addEventListener('click',()=>warpTo(id));
+    document.getElementById('all').appendChild(e);
   });
   
-  const sel=document.getElementById('as');sel.innerHTML='';
-  Object.entries(R).forEach(([id,rr])=>{const o=document.createElement('option');o.value=id;o.textContent=rr.n;sel.appendChild(o)});
+  // Alarm select
+  document.getElementById('as').innerHTML = '';
+  Object.entries(R).forEach(([id,rr])=>{const o=document.createElement('option');o.value=id;o.textContent=rr.n;document.getElementById('as').appendChild(o)});
   
   // Viewports
-  document.querySelectorAll('.cam-vp').forEach(v=>v.classList.remove('v'));
-  const ps=['tl','tr','bl','br'];
-  (rm.c||[]).slice(0,4).forEach((cam,i)=>{
-    const vp=document.getElementById('vp'+ps[i]);if(!vp)return;
-    vp.classList.add('v');vp.querySelector('.cn').textContent=cam.l;
-    const im=vp.querySelector('.fd img');if(im){
-      const k=cam.y==='thermal'?'thermal':cam.y==='radar'?'radar':cam.y==='ptz'&&cam.in?'gunnery':'default';
-      im.src=TX[k]||TX.default;
+  document.querySelectorAll('.vp').forEach(v=>v.classList.remove('v'));
+  ['tl','tr','bl','br'].forEach((p,i)=>{
+    const vp = document.getElementById('vp'+p); if(!vp) return;
+    const cam = (rm.c||[])[i]; if(!cam) return;
+    vp.classList.add('v'); vp.querySelector('.cn').textContent = cam.l;
+    const img = vp.querySelector('.fd img'); if(img) {
+      const k = cam.y==='thermal'?'thermal':cam.y==='radar'?'radar':cam.y==='ptz'&&cam.in?'gunnery':'default';
+      const src = TX_MAP[k] || TX_MAP.default;
+      img.src = src ? TXT_BASE+src+'.jpg' : '';
     }
+    const lo = vp.querySelector('.lo'); if(lo) lo.textContent = cam.l;
   });
-  const cv=document.getElementById('vpc');
-  if(rm.ci){cv.classList.add('v')}
+  const cv = document.getElementById('vpc');
+  if (rm.ci) cv.classList.add('v');
   
   // Dashboards
   document.querySelectorAll('.dash').forEach(d=>d.style.display='none');
-  (rm.db||[]).forEach(p=>{const d=document.getElementById('d'+p);if(!d)return;d.style.display='block';d.querySelectorAll('.v').forEach(g=>{const b=parseInt(g.dataset.b)||50;const v=Math.round(b+(Math.random()-.5)*15);g.textContent=v;g.style.color=v>90?'#ff5252':v>75?'#ffab40':'#69f0ae'})});
+  (rm.db||[]).forEach(p=>{
+    const d = document.getElementById('d'+p); if(!d) return; d.style.display='block';
+    d.querySelectorAll('.v').forEach(g=>{
+      const b = parseInt(g.dataset.b)||50;
+      const v = Math.round(b+(Math.random()-.5)*15);
+      g.textContent = v; g.style.color = v>90?'#ff5252':v>75?'#ffab40':'#69f0ae';
+    });
+  });
 }
 
 // Alarm
-let ato=null;
+let ato;
 document.getElementById('at').addEventListener('click',()=>{
   const rm=R[document.getElementById('as').value];if(!rm)return;
   const n=document.getElementById('al');n.textContent='🚨 ALARM: '+rm.n+' — Click to warp';n.style.display='block';
-  if(ato)clearTimeout(ato);ato=setTimeout(()=>{n.style.display='none'},8000);
+  if(ato)clearTimeout(ato);ato=setTimeout(()=>n.style.display='none',8000);
   n.onclick=()=>{n.style.display='none';warpTo(document.getElementById('as').value)};
 });
 
-// Side panel toggle
-document.getElementById('tp').addEventListener('click',()=>document.getElementById('sp').classList.toggle('h'));
+// Toggles
+document.getElementById('tp-btn').addEventListener('click',()=>document.getElementById('sp').classList.toggle('h'));
+document.getElementById('chat-btn').addEventListener('click',()=>document.getElementById('chat').classList.toggle('o'));
+document.getElementById('ch-cl').addEventListener('click',()=>document.getElementById('chat').classList.remove('o'));
+document.getElementById('viz-btn').addEventListener('click',()=>document.getElementById('viz').classList.toggle('o'));
 
-// ===== VIZ PANEL =====
-document.getElementById('viz-btn').addEventListener('click',()=>document.getElementById('viz-panel').classList.toggle('o'));
-
-// Palette buttons
-document.querySelectorAll('.viz-pal button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    const type=b.dataset.t;
-    const pos=[(Math.random()-.5)*3,0,(Math.random()-.5)*2.5];
-    addObject(type,type,pos);
-    addChat('system','Added a '+type+' to '+R[cur].n+' at '+pos.map(v=>v.toFixed(1)).join(', ')+'.');
-  });
+// Viz controls
+document.querySelectorAll('.pal button').forEach(b=>b.addEventListener('click',()=>{
+  addObj(b.dataset.t,b.dataset.t);
+  addChat('sys','Added '+b.dataset.t+' to '+R[cur].n+'.');
+}));
+document.getElementById('v-go').addEventListener('click',()=>{
+  const inp=document.getElementById('v-inp');const txt=inp.value.trim();if(!txt)return;
+  const res=parsePrompt(txt); addChat('user',txt); addChat('agent',res||'Done. Try a different object name.'); inp.value='';
 });
+document.getElementById('v-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('v-go').click()});
+document.getElementById('v-cl').addEventListener('click',()=>{clearObjs();addChat('sys','Cleared all mockup objects.')});
 
-// Prompt
-document.getElementById('viz-go').addEventListener('click',()=>{
-  const inp=document.getElementById('viz-inp');const txt=inp.value.trim();if(!txt)return;
-  const res=parsePrompt(txt);
-  addChat('user',txt);
-  addChat('assistant',res||'Visualized. Try clicking objects in the palette or a different prompt.');
-  inp.value='';
-});
-
-document.getElementById('viz-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('viz-go').click()});
-
-document.getElementById('viz-clr').addEventListener('click',()=>{clearViz();addChat('system','Cleared all mockup objects.')});
-
-// Labels checkbox
-document.getElementById('vsl').addEventListener('change',function(){/* would show/hide labels */});
-
-// Wireframe checkbox
-document.getElementById('vwi').addEventListener('change',function(){
-  wf=this.checked;if(sphere){sphere.material.wireframe=wf}
-});
-
-// Export
-document.getElementById('ve').addEventListener('click',()=>{
-  const json=JSON.stringify(objs,null,2);
-  navigator.clipboard.writeText(json).then(()=>addChat('system','Scene copied to clipboard ('+objs.length+' objects).'));
-});
-
-// ===== CHAT =====
-function addChat(role,msg){
-  const el=document.getElementById('chat-msgs');
-  if(role==='system'){
-    el.innerHTML+=`<div class="system">${msg}</div>`;
-  }else{
-    el.innerHTML+=`<div class="m"><span class="a">${role==='user'?'You':'Agent'}:</span><span class="t${role==='assistant'?' ok':''}">${msg}</span></div>`;
-  }
-  el.scrollTop=el.scrollHeight;
+// Chat
+function addChat(role,msg) {
+  const el = document.getElementById('ch-msgs');
+  if (role==='sys') el.innerHTML += `<div class="sys">${msg}</div>`;
+  else el.innerHTML += `<div class="m"><span class="s">${role==='user'?'You':'Agt'}</span><span class="t${role==='agent'?' ok':''}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
 }
-
-document.getElementById('chat-btn').addEventListener('click',()=>document.getElementById('chat-panel').classList.toggle('o'));
-document.getElementById('chat-close').addEventListener('click',()=>document.getElementById('chat-panel').classList.remove('o'));
-
-document.getElementById('chat-send').addEventListener('click',()=>{
-  const inp=document.getElementById('chat-input');const txt=inp.value.trim();if(!txt)return;
-  addChat('user',txt);inp.value='';
-  // Try to parse as viz command
-  const res=parsePrompt(txt);
-  if(res){addChat('assistant',res);return;}
-  // Fallback responses
-  const fbs=["I see a clear view ahead. All systems normal.","Checked engine room — temps are good. Fuel at 72%.","Radar shows a vessel 3nm to port, not on intercept course.","Want me to visualize something? Try 'add a pot hauler' or 'show fire in engine room'.","All cameras operational. No anomalies to report."];
-  setTimeout(()=>addChat('assistant',fbs[Math.floor(Math.random()*fbs.length)]),500);
+document.getElementById('ch-send').addEventListener('click',()=>{
+  const inp=document.getElementById('ch-inp');const txt=inp.value.trim();if(!txt)return;
+  addChat('user',txt); inp.value='';
+  const res = parsePrompt(txt);
+  if (res) { addChat('agent',res); return; }
+  const fb = ["All systems normal.","Checked engine room — temps good.","Radar clear. No contacts.","Try 'add a winch' or 'show smoke'.","Cameras operational. No anomalies."];
+  setTimeout(()=>addChat('agent',fb[Math.floor(Math.random()*fb.length)]),400);
 });
-document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('chat-send').click()});
+document.getElementById('ch-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ch-send').click()});
 
 // Resize
-window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();r.setSize(innerWidth,innerHeight)});
+window.addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 
-// ===== ANIMATE =====
-function animate(){
+// ===== ANIMATION =====
+function animate() {
   requestAnimationFrame(animate);
-  sph.theta+=(ts.theta-sph.theta)*.1;sph.phi+=(ts.phi-sph.phi)*.1;
-  const lx=Math.cos(sph.phi)*Math.sin(sph.theta),ly=Math.sin(sph.phi),lz=Math.cos(sph.phi)*Math.cos(sph.theta);
-  cam.lookAt(lx,ly,lz);
-  // Animate fire particles
-  if(vizGroup)vizGroup.children.forEach(ch=>{if(ch.material&&ch.material.emissiveIntensity!==undefined)ch.material.emissiveIntensity=.4+Math.random()*.3});
-  r.render(s,cam);
+  sph.theta += (tgt.theta-sph.theta)*.08;
+  sph.phi += (tgt.phi-sph.phi)*.08;
+  cam.lookAt(Math.cos(sph.phi)*Math.sin(sph.theta),Math.sin(sph.phi),Math.cos(sph.phi)*Math.cos(sph.theta));
+  if (vizGroup) vizGroup.children.forEach(ch=>{if(ch.material&&ch.material.emissiveIntensity!==undefined)ch.material.emissiveIntensity=.4+Math.random()*.3});
+  renderer.render(scene,cam);
 }
 
 // ===== INIT =====
-async function init(){
-  const loads=Object.keys(R).map(id=>loadRoomTex(id));
-  await Promise.all(loads);
-  buildRoom(cur);updateUI();
-  document.getElementById('ld').classList.add('h');
-  setInterval(()=>{const rm=R[cur];if(rm)updateDashboards(rm)},3e3);
-  addChat('system','Room Navigator loaded. Try the 🎨 Design panel for 3D mockups.');
+async function init() {
+  // Load all textures
+  const texNames = [...new Set(Object.values(R).map(r=>r.tx))];
+  await Promise.all(texNames.map(n=>loadTex(n)));
+  buildRoom(cur); updateUI();
+  
+  // Hide splash
+  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 1600);
+  
+  // Start
   animate();
+  setInterval(()=>{const rm=R[cur];if(rm)updateDashboards(rm)},3000);
+  addChat('sys','Navigator loaded. Drag to look. Panel to warp. 🎨 Design to mockup 3D objects.');
 }
 init();
 
-function updateDashboards(rm){(rm.db||[]).forEach(p=>{const d=document.getElementById('d'+p);if(!d)return;d.querySelectorAll('.v').forEach(g=>{const b=parseInt(g.dataset.b)||50;const v=Math.round(b+(Math.random()-.5)*15);g.textContent=v;g.style.color=v>90?'#ff5252':v>75?'#ffab40':'#69f0ae'})})}
+function updateDashboards(rm) {
+  (rm.db||[]).forEach(p=>{
+    const d=document.getElementById('d'+p);if(!d)return;
+    d.querySelectorAll('.v').forEach(g=>{
+      const b=parseInt(g.dataset.b)||50;const v=Math.round(b+(Math.random()-.5)*15);
+      g.textContent=v;g.style.color=v>90?'#ff5252':v>75?'#ffab40':'#69f0ae';
+    });
+  });
+}
 
-console.log('🚢 Vessel Room Navigator + Viz Engine loaded');
+console.log('🚢 Vessel Room Navigator — polished');
 </script>
 </body>
 </html>
