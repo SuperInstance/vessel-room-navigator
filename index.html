@@ -35,6 +35,13 @@ body{background:#050510;overflow:hidden;font-family:'SF Pro Display','Segoe UI',
 #c{position:fixed;inset:0}
 canvas{display:block}
 
+
+/* Panel button attention */
+@keyframes pulse-btn {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+#tp { animation: pulse-btn 2s ease 3; }
 /* Transition overlay */
 #trans{position:fixed;inset:0;z-index:50;background:#050510;opacity:0;pointer-events:none;transition:opacity .25s ease}
 #trans.active{opacity:1}
@@ -637,7 +644,7 @@ async function init() {
   // Start
   animate();
   setInterval(()=>{const rm=R[cur];if(rm)updateDashboards(rm)},3000);
-  addChat('sys','Navigator loaded. Drag to look. Panel to warp. 🎨 Design to mockup 3D objects.');
+  addChat('sys','🚢 Navigator loaded. Drag to look around. Press keys 1-9 to warp rooms. ☰ for controls. 🎨 to design 3D mockups.');
 }
 init();
 
