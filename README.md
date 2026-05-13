@@ -3,7 +3,7 @@
 **Your boat as a navigable 3D web space.**  
 ScummVM meets Google Street View. Walk between rooms, warp instantly, monitor cameras, read gauges, respond to alarms, and design 3D mockups — all in your browser.
 
-**[→ Launch the Navigator](https://superinstance.github.io/vessel-room-navigator/)**
+**[→ Launch the Navigator](https://fleet.cocapn.ai/)**
 
 ---
 
@@ -13,7 +13,7 @@ Every physical space on a fishing vessel is a "room" — a 360° panoramic webpa
 
 Walk from the wheelhouse to the engine room. Warp instantly to the crow's nest. Check thermal cameras, read engine gauges, respond to alarms, or pull up the design panel and type "add a winch" to see a 3D mockup rendered right in the room.
 
-**[Click here to try it right now.](https://superinstance.github.io/vessel-room-navigator/)** No install, no signup, no server. Just a browser.
+**[Click here to try it right now.](https://fleet.cocapn.ai/)** No install, no signup, no server. Just a browser.
 
 ---
 
@@ -52,7 +52,7 @@ Walk from the wheelhouse to the engine room. Warp instantly to the crow's nest. 
 
 ```bash
 # Option 1: Open the live site
-open https://superinstance.github.io/vessel-room-navigator/
+open https://fleet.cocapn.ai/
 
 # Option 2: Serve locally
 git clone https://github.com/SuperInstance/vessel-room-navigator.git
