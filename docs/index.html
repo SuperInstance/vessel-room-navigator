@@ -572,9 +572,9 @@ document.getElementById('at').addEventListener('click',()=>{
 
 // Toggles
 document.getElementById('tp-btn').addEventListener('click',()=>document.getElementById('sp').classList.toggle('h'));
-document.getElementById('chat-btn').addEventListener('click',()=>document.getElementById('chat').classList.toggle('o'));
+document.getElementById('chat-btn').addEventListener('click',()=>{document.getElementById('chat').classList.toggle('o');document.getElementById('viz').classList.remove('o')});
 document.getElementById('ch-cl').addEventListener('click',()=>document.getElementById('chat').classList.remove('o'));
-document.getElementById('viz-btn').addEventListener('click',()=>document.getElementById('viz').classList.toggle('o'));
+document.getElementById('viz-btn').addEventListener('click',()=>{document.getElementById('viz').classList.toggle('o');document.getElementById('chat').classList.remove('o')});
 
 // Viz controls
 document.querySelectorAll('.pal button').forEach(b=>b.addEventListener('click',()=>{
