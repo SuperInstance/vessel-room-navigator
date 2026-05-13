@@ -4,13 +4,16 @@
 
 ---
 
-Open this: https://fleet.cocapn.ai/
+Open the demo: https://fleet.cocapn.ai/
+   Fallback (GitHub CDN): https://superinstance.github.io/vessel-room-navigator/
 
 You're in a wheelhouse. Drag to look around — 360° panorama, warm instrument lighting, radar screens. Press 2 and you're in the galley. Press 7 and you're in the crow's nest, looking out at the Bering Sea.
 
 The panoramas are all AI-generated. Seven rooms, FLUX-1-schnell, 1792×1024 each. Cost: $0.03. Less than a gumball.
 
 The viewer is a single HTML file. 38KB. Three.js from a CDN. No build step, no install, no backend. Open it in any browser and walk around.
+
+Both serve the same 38KB HTML file. The textures are on both. If one goes down, the other works.
 
 That's the demo. The interesting part is what the demo is made of.
 
