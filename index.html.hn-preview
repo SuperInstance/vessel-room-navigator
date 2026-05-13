@@ -165,40 +165,13 @@ canvas{display:block}
 
 /* Responsive */
 @media(max-width:768px){
-  #sp{width:200px}
-  .vp-tl,.vp-tr,.vp-bl,.vp-br{width:100px;height:70px}.vp-tr{right:220px}.vp-br{right:220px}
-  .vp-c{width:240px;height:160px}
-  .dash-r{right:220px}
-  .dash h4{font-size:6px}
-  .g .v{font-size:12px}
-  .g .l{font-size:5px}
-  .gr{gap:5px}
-  #rt{font-size:12px;padding:5px 10px;top:10px;gap:4px}
-  #cp{bottom:14px;gap:1px;padding:3px 4px}
-  #cp button{padding:3px 6px;font-size:6px;letter-spacing:.2px}
-  #chat{width:260px}#chat.o{height:220px}
-  .ch-h span{font-size:9px}
-  .ch-msgs{font-size:10px;padding:6px 10px}
-  .ch-in input{font-size:10px}
-  #viz{width:280px}#viz.o{height:220px}.v-right{width:100px}
-  .pal button{padding:3px 5px;font-size:7px}
-  #ins{font-size:8px;bottom:40px}
-  #al{font-size:11px;padding:8px 16px;top:56px}
-  .sec h3{font-size:8px}
-  .rl{font-size:9px;padding:3px 6px}
-  .ce{font-size:9px}
-  #tp,#viz-btn,#chat-btn{font-size:11px;padding:4px 8px}
-}
-@media(max-width:480px){
-  .vp{display:none!important}
-  .vp-c{display:flex!important;width:160px;height:100px}
-  .dash{display:none!important}
-  #rt{font-size:10px;padding:3px 6px}
-  #cp{bottom:8px}
-  #cp button{padding:2px 4px;font-size:5px}
-  #sp{width:160px}
-  #chat{width:100%;border-radius:0}
-  #viz{width:100%;border-radius:0}
+  #sp{width:220px}
+  .vp-tl,.vp-tr,.vp-bl,.vp-br{width:120px;height:80px}.vp-tr{right:240px}.vp-br{right:240px}
+  .dash-r{right:240px}
+  #rt{font-size:13px;padding:6px 14px}
+  #chat{width:300px}#chat.o{height:260px}
+  #viz{width:320px}#viz.o{height:260px}.v-right{width:120px}
+  #cp button{padding:4px 8px;font-size:7px}
 }
 </style>
 </head>
@@ -324,14 +297,8 @@ const objs = [];
 
 // ===== TEXTURE LOADER =====
 async function loadTex(name) {
-  if (texCache[name]) return Promise.resolve(texCache[name]);
-  return new Promise(r => {
-    tl.load(TXT_BASE+name+'.jpg',
-      t => { t.colorSpace = THREE.SRGBColorSpace; texCache[name]=t; r(t); },
-      undefined,
-      () => { r(null); }
-    );
-  });
+  if (texCache[name]) return texCache[name];
+  return new Promise(r => tl.load(TXT_BASE+name+'.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; texCache[name]=t; r(t) }, null, () => r(null)));
 }
 
 // ===== ROOM =====
@@ -620,19 +587,13 @@ function animate() {
 
 // ===== INIT =====
 async function init() {
-  // Load current room texture FIRST, show room immediately
-  document.getElementById('ld').querySelector('p').textContent = 'Loading ' + R[cur].n + '...';
-  await loadTex(R[cur].tx).catch(() => {});
+  // Load all textures
+  const texNames = [...new Set(Object.values(R).map(r=>r.tx))];
+  await Promise.all(texNames.map(n=>loadTex(n)));
   buildRoom(cur); updateUI();
   
-  // Hide splash after brief delay for smooth transition
-  setTimeout(() => document.getElementById('ld').classList.add('h'), 600);
-  
-  // Background load remaining textures
-  const texNames = [...new Set(Object.values(R).map(r=>r.tx))].filter(n => n !== R[cur].tx);
-  for (const name of texNames) {
-    loadTex(name).catch(() => {});
-  }
+  // Hide splash
+  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 1600);
   
   // Start
   animate();
@@ -651,7 +612,7 @@ function updateDashboards(rm) {
   });
 }
 
-
+console.log('🚢 Vessel Room Navigator — polished');
 </script>
 </body>
 </html>
