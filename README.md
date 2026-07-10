@@ -103,15 +103,20 @@ Everything is a room. Every room has capabilities. The agent's only job is to fi
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| 3D rendering | Three.js (360° sphere interiors) |
-| Panorama textures | FLUX-1-schnell (AI-generated, 1792×1024) |
-| Visualization engine | Three.js primitives (boxes, cylinders, particles) |
-| Chat / voice | 🔮 Gemini Nano (browser-native AI) + PLATO tiles — **explored in research docs, NOT in the live demo.** Actual chat is a keyword parser (`parsePrompt`) that places a 3D primitive for known words (box/winch/fire/crew/...) and otherwise returns a random line from a 5-item hardcoded fallback array. No LLM, no Gemini, no cloud call of any kind. |
-| Camera agents | ESP32-S3 firmware (C++, JSON/WebSocket, ESP-NOW) |
-| Vector search | WebGPU / CUDA / Vulkan / Metal / WASM (modular) |
-| Knowledge base | PLATO room server (distributed tile system) |
+> **Legend:** ✅ = real and running in the live demo today (verified against `index.html`).
+> 🔮 = architecture explored in `research/*.md`, **not** implemented in the deployed single-file demo.
+>
+> The live site is a **standalone single HTML file with no backend, no WebSocket, and no network calls** beyond loading static `.jpg` textures. (Verified: `index.html` contains zero `fetch(` / `WebSocket(` calls.) Rows marked 🔮 describe research directions, not shipping behavior.
+
+| Layer | Status | What's actually in the demo |
+|-------|:------:|-----------------------------|
+| 3D rendering | ✅ | Three.js rendering a 360° panorama onto the inside of a sphere (`THREE.TextureLoader`, `WebGLRenderer`). |
+| Panorama textures | ✅ | 10 static `.jpg` files at 1792×1024 (verified dimensions). They were **generated offline** with FLUX-1-schnell; the demo just loads these static images — there is no runtime image generation. |
+| Visualization engine | ✅ | Three.js primitives — boxes, cylinders, spheres, tori, cones, particle "fire", and "crew" figures — placed by the visualizer panel. |
+| Chat / voice | 🔮 | Gemini Nano + PLATO are **research-only**. The actual chat handler is `parsePrompt`, a keyword→primitive map; unrecognized input returns a random line from a 5-item hardcoded fallback array (`fb`). No LLM, no Gemini, no cloud call. |
+| Camera agents | 🔮 | ESP32-S3 firmware is **research-only**. In the demo, "cameras" are static `.jpg` placeholders shown in corner viewports (selected by camera type: thermal/radar/gunnery/default). There is no hardware link, no PTZ control, and no live feed. |
+| Vector search | 🔮 | WebGPU / CUDA / Vulkan / Metal / WASM vector DB is **research-only** ([docs](docs/research/vessel-room-gpu-vectordb.md)). Not present in the demo. |
+| Knowledge base | 🔮 | PLATO room server is **research-only** ([docs](docs/research/vessel-room-gemini-plato.md)). Not present in the demo. |
 
 ---
 
