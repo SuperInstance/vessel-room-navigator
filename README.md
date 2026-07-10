@@ -23,7 +23,7 @@ Walk from the wheelhouse to the engine room. Warp instantly to the crow's nest. 
 |---|---|
 | 🎯 **360° Rooms** | Drag to look around 7 AI-photorealistic panoramas |
 | 🚶 **Walk / Warp** | Click doors to walk, ⚡ to teleport, or press 1-9 |
-| 📷 **Cameras** | PTZ, thermal, radar feeds in corner viewports |
+| 📷 **Cameras** | Static placeholder images (thermal/radar/gunnery) in corner viewports — **not** live PTZ/thermal/radar feeds |
 | 📊 **Dashboards** | Simulated demo gauges (random jitter around static baseline values — **not** connected to real sensors or telemetry) |
 | 🚨 **Alarms** | Trigger alarms → click to auto-warp to problem room |
 | 🎨 **Visualizer** | Type "add a winch" or "show smoke" → 3D mockups render in-room |
