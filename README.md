@@ -27,7 +27,7 @@ Walk from the wheelhouse to the engine room. Warp instantly to the crow's nest. 
 | 📊 **Dashboards** | Simulated demo gauges (random jitter around static baseline values — **not** connected to real sensors or telemetry) |
 | 🚨 **Alarms** | Trigger alarms → click to auto-warp to problem room |
 | 🎨 **Visualizer** | Type "add a winch" or "show smoke" → 3D mockups render in-room |
-| 💬 **Chat** | Talk to the room agent, get responses |
+| 💬 **Chat** | Keyword-triggered object placer; unrecognized input returns a random canned reply (no AI / no LLM) |
 | 🔑 **Keys** | WASD/Arrow = look. 1-9 = warp. ☰ = panel. |
 
 ---
@@ -108,7 +108,7 @@ Everything is a room. Every room has capabilities. The agent's only job is to fi
 | 3D rendering | Three.js (360° sphere interiors) |
 | Panorama textures | FLUX-1-schnell (AI-generated, 1792×1024) |
 | Visualization engine | Three.js primitives (boxes, cylinders, particles) |
-| Chat/voice | Gemini Nano (browser-native AI) + PLATO tiles |
+| Chat / voice | 🔮 Gemini Nano (browser-native AI) + PLATO tiles — **explored in research docs, NOT in the live demo.** Actual chat is a keyword parser (`parsePrompt`) that places a 3D primitive for known words (box/winch/fire/crew/...) and otherwise returns a random line from a 5-item hardcoded fallback array. No LLM, no Gemini, no cloud call of any kind. |
 | Camera agents | ESP32-S3 firmware (C++, JSON/WebSocket, ESP-NOW) |
 | Vector search | WebGPU / CUDA / Vulkan / Metal / WASM (modular) |
 | Knowledge base | PLATO room server (distributed tile system) |
