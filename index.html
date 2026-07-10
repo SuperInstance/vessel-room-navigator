@@ -628,12 +628,12 @@ function animate() {
 // ===== INIT =====
 async function init() {
   // Load current room texture FIRST, show room immediately
-  document.getElementById('ld').querySelector('p').textContent = 'Loading ' + R[cur].n + '...';
+  document.getElementById('splash').querySelector('p').textContent = 'Loading ' + R[cur].n + '...';
   await loadTex(R[cur].tx).catch(() => {});
   buildRoom(cur); updateUI();
   
   // Hide splash after brief delay for smooth transition
-  setTimeout(() => document.getElementById('ld').classList.add('h'), 600);
+  setTimeout(() => document.getElementById('splash').classList.add('hidden'), 600);
   
   // Background load remaining textures
   const texNames = [...new Set(Object.values(R).map(r=>r.tx))].filter(n => n !== R[cur].tx);
