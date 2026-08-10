@@ -4,6 +4,14 @@
 >
 > **ScummVM meets Google Street View — a fishing vessel as a navigable 3D web space.**
 
+> *It feels like the boat has become a lucid dream you can audit — a place where the ship's memory is not just remembered, but walked through.*
+>
+> — [DeepSeek V4-Flash](https://api.deepseek.com), on what the Navigator feels like
+
+> *It does not draw maps — it holds tensioned structure. Nine rooms stitched into a Laman-rigid graph: formally proven sound, no slack that could let one room drift loose from the whole.*
+>
+> — [Seed Pro](https://github.com/SuperInstance/AI-Writings/tree/main/prose), on the room graph
+
 Every physical space on F/V EILEEN is a "room" — a 360° panoramic webpage. Walk from the wheelhouse to the engine room. Warp to the crow's nest. Check thermal cameras, read engine gauges, respond to alarms. Type "add a winch" and watch a 3D mockup render right in the room.
 
 **[→ Launch the Navigator](https://fleet.cocapn.ai/)** — no install, no signup, no server. Just a browser.

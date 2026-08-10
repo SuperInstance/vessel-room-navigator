@@ -26,6 +26,14 @@ AI-generated panoramic textures for the 9 rooms of F/V EILEEN, plus camera feed 
 
 Generated with [FLUX-1-schnell](https://github.com/SuperInstance/AI-Writings/tree/main/prose). These are also duplicated in [`docs/textures/`](../docs/textures/) for the deployed site.
 
+## Fleet Connections
+
+- [vessel-agent-system](https://github.com/SuperInstance/vessel-agent-system) — Live telemetry that these rooms visualize
+- [hermes-perception](https://github.com/SuperInstance/hermes-perception) — The camera feeds as perception endpoints
+- [cocapn-dashboard](https://github.com/SuperInstance/cocapn-dashboard) — The bioluminescent fleet dashboard
+- [vibe-protocol](https://github.com/SuperInstance/vibe-protocol) — Vibes in these rooms become signals
+- [AI-Writings](https://github.com/SuperInstance/AI-Writings/tree/main/prose) — The boat rendered in prose
+
 ---
 
 [← Back to Vessel Room Navigator](../README.md)

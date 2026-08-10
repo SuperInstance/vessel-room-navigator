@@ -44,4 +44,20 @@ docs/
 
 ---
 
+## Fleet Connections
+
+- [vessel-agent-system](https://github.com/SuperInstance/vessel-agent-system) — AELMA telemetry feeds the room displays
+- [scummvm-prototype](https://github.com/SuperInstance/scummvm-prototype) — The first playable room engine
+- [mud-engine](https://github.com/SuperInstance/mud-engine) — The MUD room system shares the unified room theory
+- [cocapn-dashboard](https://github.com/SuperInstance/cocapn-dashboard) — Visualizes what the navigator navigates
+- [spatial-registry](https://github.com/SuperInstance/spatial-registry) — The reef topology connecting rooms across worlds
+- [cns-bridge](https://github.com/SuperInstance/cns-bridge) — Alarm events from the CNS bus auto-warp you
+- [hermes-perception](https://github.com/SuperInstance/hermes-perception) — Camera feeds are perception endpoints
+- [platos-shell](https://github.com/SuperInstance/platos-shell) — The shell pattern; the navigator IS a shell
+- [AI-Writings: The Reef Thread](https://github.com/SuperInstance/AI-Writings/tree/main/prose) — Spatial topology stories
+- [room-render](https://github.com/SuperInstance/room-render) — Single render, 3 frontends
+- [terrain](https://github.com/SuperInstance/terrain) — MUD-to-visual bridge
+
+---
+
 [← Back to Vessel Room Navigator](../README.md)
