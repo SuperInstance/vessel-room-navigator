@@ -1,35 +1,31 @@
-# textures/ — Panorama & Camera Textures
+# textures/ — Room Panoramas and Camera Feeds
 
-AI-generated 360° panoramas and camera feeds for the vessel room system.
+> *The windows. Every room rendered as a 360° sphere.*
 
-## Panoramas (FLUX-1-schnell, 1792×1024)
+AI-generated panoramic textures for the 9 rooms of F/V EILEEN, plus camera feed textures for dashboards and instruments.
+
+## Panoramas (1792×1024)
 
 | File | Room | View |
 |------|------|------|
-| `pano_wheelhouse.jpg` | Wheelhouse | Primary navigation and engine controls |
-| `pano_galley.jpg` | Galley | Mess and cooking area |
-| `pano_foredeck.jpg` | Foredeck | Bow view, open ocean |
-| `pano_aft_cockpit.jpg` | Aft Cockpit | Stern, fishing deck |
-| `pano_engine_room.jpg` | Engine Room | Machinery space |
-| `pano_wheelhouse_roof.jpg` | Wheelhouse Roof | 360° panorama, radar antenna |
-| `pano_crows_nest.jpg` | Crow's Nest | PTZ gunnery station, highest point |
+| [`pano_wheelhouse.jpg`](pano_wheelhouse.jpg) | Wheelhouse | Engine dash, radar, nav display, helm controls |
+| [`pano_galley.jpg`](pano_galley.jpg) | Galley | Warm kitchen, porthole view, mess table |
+| [`pano_foredeck.jpg`](pano_foredeck.jpg) | Foredeck | Bow rail, open ocean, anchor winch |
+| [`pano_aft_cockpit.jpg`](pano_aft_cockpit.jpg) | Aft Cockpit | Stern cam, fishing deck, nav display |
+| [`pano_engine_room.jpg`](pano_engine_room.jpg) | Engine Room | Diesel engine, thermal camera targets, gauges |
+| [`pano_wheelhouse_roof.jpg`](pano_wheelhouse_roof.jpg) | Wheelhouse Roof | 360° panorama, radar antenna, sky |
+| [`pano_crows_nest.jpg`](pano_crows_nest.jpg) | Crow's Nest | PTZ gunnery station, elevated view |
 
-## Camera Feeds
+## Camera Textures
 
-| File | Type | Purpose |
-|------|------|---------|
-| `cam_radar.jpg` | Overlay | Radar display |
-| `cam_thermal.jpg` | Thermal | Heat-sensing camera |
-| `cam_gunnery.jpg` | PTZ | Gunnery station camera |
+| File | Camera | Type |
+|------|--------|------|
+| [`cam_gunnery.jpg`](cam_gunnery.jpg) | Gunnery PTZ | Optical |
+| [`cam_radar.jpg`](cam_radar.jpg) | Radar Display | Overlay |
+| [`cam_thermal.jpg`](cam_thermal.jpg) | Engine Thermal | Thermal imaging |
 
-## Preview
-
-| File | Purpose |
-|------|---------|
-| `social-preview.jpg` | Social media preview image |
-
-All textures are also duplicated in `docs/textures/` for the GitHub Pages deployment.
+Generated with [FLUX-1-schnell](https://github.com/SuperInstance/AI-Writings/tree/main/prose). These are also duplicated in [`docs/textures/`](../docs/textures/) for the deployed site.
 
 ---
 
-← Back to [Vessel Room Navigator](../README.md)
+[← Back to Vessel Room Navigator](../README.md)

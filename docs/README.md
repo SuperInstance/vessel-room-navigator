@@ -1,38 +1,47 @@
-# docs/ — Research & Documentation
+# docs/ — Documentation & Research
 
-16 research documents (~240KB) covering every angle of the vessel room system.
+> *16 research documents. ~25,000 words. Every angle of the room system examined.*
 
-## Research Papers
+## Structure
 
-| Document | Focus |
-|----------|-------|
-| [Synthesis](./research/vessel-room-synthesis.md) | **Unified room theory.** Physical spaces, code primitives, and knowledge tiles are all rooms. One agent loop: probe → discover → test → pick → remember. |
-| [Design](./research/vessel-room-navigation-design.md) | Full architecture. 9 room types. Adjacency graphs, warp mechanics. |
-| [Camera Architecture](./research/camera-architecture-for-vessel-rooms.md) | PTZ, thermal, radar — 5 camera modes. ESP32 integration. |
-| [Topology Analysis](./research/vessel-room-topology-analysis.md) | Formal graph theory. Laman rigidity. Room connectivity. |
-| [UX Flows](./research/vessel-room-ux-flows.md) | User experience. Walk vs. warp. Alarm auto-warp. |
-| [UX Seed](./research/vessel-room-human-ux-seed.md) | Initial UX concept. Human-centered design. |
-| [ESP32 Agent](./research/vessel-room-esp32-agent.md) | Camera IS the agent. JSON, WebSocket, ESP-NOW. |
-| [GPU Vector DB](./research/vessel-room-gpu-vectordb.md) | Modular compute: CUDA/WebGPU/Vulkan/WASM. |
-| [WebGPU Vector DB](./research/vessel-room-webgpu-vectordb.md) | Browser-native vector search. |
-| [Gemini + PLATO](./research/vessel-room-gemini-plato.md) | On-device AI. No cloud. Zero cost. |
-| [Generative Platform](./research/vessel-room-generative-platform.md) | GPU-powered iteration loop. Type → render. |
-| [Room Graph Brainstorm](./research/room-graph-brainstorm.md) | Early design exploration. |
-| [Navigation v1](./research/vessel-room-navigation-v1.md) | First specification. |
-| [FM Connection](./research/vessel-room-fm-connection.md) | Link to FLUX runtime. |
-| [Archaeology](./research/vessel-room-archeology.md) | Historical context. Room systems through time. |
-| [Rooms Make Models Smart](./research/rooms-make-models-smart.md) | How room structure improves ML. |
-| **[Full Index](./research/vessel-room-navigation-INDEX.md)** | All 16 documents. |
+```
+docs/
+├── textures/          # Mirror of panorama textures for the live site
+├── research/          # 16 research documents covering the full design
+├── release/           # Release announcements (HN post, workshop notes)
+├── index.html         # Live site entry point
+├── .nojekyll          # Disable GitHub Pages Jekyll processing
+└── social-preview.jpg # Social media preview image
+```
+
+## Research Documents
+
+| # | Document | Source Model | Focus |
+|---|----------|-------------|-------|
+| 0 | [INDEX](research/vessel-room-navigation-INDEX.md) | GLM-5.1 | Master index, key insights, action items |
+| 1 | [Navigation V1](research/vessel-room-navigation-v1.md) | GLM-5.1 | Original spec: room types, navigation, camera system |
+| 2 | [Design Doc](research/vessel-room-navigation-design.md) | MiniMax M2.7 | Full design: room hierarchy, navigation semantics, alarms |
+| 3 | [Camera Architecture](research/camera-architecture-for-vessel-rooms.md) | GLM-5-Turbo | Camera domain model, 5 types, 5 modes, sensor fusion |
+| 4 | [Topology Analysis](research/vessel-room-topology-analysis.md) | MiniMax M2.7 | Formal graph theory: Laman rigidity, betweenness, paths |
+| 5 | [Room Graph Brainstorm](research/room-graph-brainstorm.md) | Seed-2.0-mini | LOD compression, caching, time-stamped URLs, federation |
+| 6 | [Archaeology](research/vessel-room-archeology.md) | MiniMax + Seed | 1986→2006 history + 2036→2046 reverse actualization |
+| 7 | [UX Flows](research/vessel-room-ux-flows.md) | GLM-5.1 + Seed | Captain's watch trace, glance/stare model, alarm encoding |
+| 8 | [Human UX Seed](research/vessel-room-human-ux-seed.md) | Seed-2.0-mini | UX from the deck: muscle memory, wet/dark/bouncing design |
+| 9 | [Synthesis](research/vessel-room-synthesis.md) | Synthesis | Unified room theory: one loop for all domains |
+| 10 | [GPU Vector DB](research/vessel-room-gpu-vectordb.md) | Research | Modular compute: CUDA/WebGPU/Vulkan/WASM |
+| 11 | [Gemini + PLATO](research/vessel-room-gemini-plato.md) | Research | On-device AI, no cloud |
+| 12 | [Generative Platform](research/vessel-room-generative-platform.md) | Research | GPU-powered iteration loop |
+| 13 | [Make Models Smart](research/rooms-make-models-smart.md) | Research | Rooms improve AI model performance |
+| 14 | [FM Connection](research/vessel-room-fm-connection.md) | Research | Room system ↔ FLUX runtime |
+| 15 | [WebGPU VectorDB](research/vessel-room-webgpu-vectordb.md) | Research | WebGPU-accelerated vector operations |
 
 ## Release Materials
 
-- [HN Workshop](./release/hn-workshop.md) — Hacker News launch workshop
-- [HN Post](./release/hn-post.md) — Launch post draft
-
-## GitHub Pages
-
-The [docs/](.) directory also serves as the GitHub Pages site at [fleet.cocapn.ai](https://fleet.cocapn.ai/). The [`index.html`](./index.html) is the live navigator. [`.nojekyll`](./.nojekyll) disables Jekyll processing.
+| Document | Description |
+|----------|-------------|
+| [`release/hn-post.md`](release/hn-post.md) | Hacker News launch post |
+| [`release/hn-workshop.md`](release/hn-workshop.md) | Workshop notes and feedback |
 
 ---
 
-← Back to [Vessel Room Navigator](../README.md)
+[← Back to Vessel Room Navigator](../README.md)
