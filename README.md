@@ -115,6 +115,36 @@ Everything is a room. Every room has capabilities. The agent's only job is to fi
 
 ---
 
+## In the Fleet
+
+Vessel Room Navigator is the spatial interface of the [SuperInstance](https://github.com/SuperInstance) fleet. It connects to:
+
+- 🚢 **[vessel-agent-system](https://github.com/SuperInstance/vessel-agent-system)** — The real boat. This IS the boat, rendered. 334 files of vessel intelligence.
+- 🏠 **[mud-engine](https://github.com/SuperInstance/mud-engine)** — THE room engine. 285 files. The boat IS a room.
+- 🎮 **[scummvm-prototype](https://github.com/SuperInstance/scummvm-prototype)** — First playable. Room navigation pattern. 123 files.
+- 🗺️ **[spatial-registry](https://github.com/SuperInstance/spatial-registry)** — 4 worlds, 33 rooms. The boat is one world.
+- 🌊 **[terrain](https://github.com/SuperInstance/terrain)** — MUD-to-visual bridge.
+- 🧭 **[cns-bridge](https://github.com/SuperInstance/cns-bridge)** — Nervous system for the boat. Signals flow between rooms.
+- 👁️ **[hermes-perception](https://github.com/SuperInstance/hermes-perception)** — The towfish. What the cameras see.
+- 📊 **[cocapn-dashboard](https://github.com/SuperInstance/cocapn-dashboard)** — Bioluminescent fleet dashboard.
+- ✍️ **[AI-Writings](https://github.com/SuperInstance/AI-Writings/tree/main/prose)** — The fleet writes about rooms, navigation, and the unified theory.
+
+### The Reef Thread
+
+Vessel Room Navigator is part of the Reef — spatial topology across the fleet. Rooms are nodes, doorways are edges, the boat is a graph. The unified room theory says: code is a reef too. Knowledge is a reef too. The agent navigates all three with the same loop.
+
+---
+
+## Where to Next
+
+- **If you need the boat's brain:** → [vessel-agent-system](https://github.com/SuperInstance/vessel-agent-system) — 334 files, AELMA
+- **If you need the room engine:** → [mud-engine](https://github.com/SuperInstance/mud-engine) — THE core MUD
+- **If you need a first playable:** → [scummvm-prototype](https://github.com/SuperInstance/scummvm-prototype) — 123 files
+- **If you need vibes → signals:** → [vibe-protocol](https://github.com/SuperInstance/vibe-protocol) — communication protocol
+- **If you need the dark mirror:** → [zeroclaw](https://github.com/SuperInstance/zeroclaw) — when the agent goes feral
+
+---
+
 ## License
 
 Cocapn — Keeper fleet infrastructure.  
