@@ -24,11 +24,11 @@ Every physical space on F/V EILEEN is a "room" — a 360° panoramic webpage. Wa
 |---------|----------------|
 | 🎯 **[360° Rooms](textures/)** | Drag to look around 9 AI-photorealistic panoramas |
 | 🚶 **Walk / Warp** | Click doors to walk, ⚡ to teleport, or press 1–9 |
-| 📷 **[Cameras](docs/research/camera-architecture-for-vessel-rooms.md)** | PTZ, thermal, radar feeds in corner viewports |
-| 📊 **Dashboards** | Live engine, nav, and monitor gauges |
+| 📷 **Cameras** | Static placeholder images (thermal/radar/gunnery) in corner viewports — **not** live PTZ/thermal/radar feeds |
+| 📊 **Dashboards** | Simulated demo gauges (random jitter around static baselines — **not** connected to real sensors) |
 | 🚨 **Alarms** | Trigger alarms → click to auto-warp to problem room |
 | 🎨 **Visualizer** | Type "add a winch" → 3D mockup renders in-room |
-| 💬 **Chat** | Talk to the room agent, get responses |
+| 💬 **Chat** | Keyword-triggered object placer; unrecognized input returns a random canned reply (no AI / no LLM) |
 | 🔑 **Keys** | WASD/Arrow = look. 1–9 = warp. ☰ = panel. |
 
 ---
@@ -95,6 +95,10 @@ python3 -m http.server 8888
 No build step. No dependencies. No server. Works offline after first load.
 
 ---
+
+## What’s Real vs. Research
+
+**[→ Launch the Navigator](https://superinstance.github.io/vessel-room-navigator/)**
 
 ## Research
 
