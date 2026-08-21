@@ -152,7 +152,7 @@ The Vessel Room Navigator is the spatial interface of the [SuperInstance](https:
 - [**cocapn-dashboard**](https://github.com/SuperInstance/cocapn-dashboard) — The bioluminescent fleet dashboard visualizes what the navigator navigates through.
 - [**spatial-registry**](https://github.com/SuperInstance/spatial-registry) — The spatial topology registry maps rooms across worlds.
 - [**cns-bridge**](https://github.com/SuperInstance/cns-bridge) — Alarm events from the CNS bus auto-warp you to the problem room.
-- [**hermes-perception**](https://github.com/SuperInstance/hermes-perception) — Camera feeds in the navigator are perception endpoints.
+- [**hermes-avatar**](https://github.com/SuperInstance/hermes-avatar) — Camera feeds in the navigator are perception endpoints.
 - [**platos-shell**](https://github.com/SuperInstance/platos-shell) — The shell pattern: agents finding rooms. The navigator is a shell.
 - [**AI-Writings**](https://github.com/SuperInstance/AI-Writings/tree/main/prose) — The vessel's story told through rooms.
 
@@ -175,6 +175,6 @@ Built for the Bering Sea and everywhere else with salt in the air.
 - [**mud-engine**](https://github.com/SuperInstance/mud-engine) — The MUD room system
 - [**cocapn-dashboard**](https://github.com/SuperInstance/cocapn-dashboard) — See the fleet
 - [**spatial-registry**](https://github.com/SuperInstance/spatial-registry) — The reef topology
-- [**hermes-perception**](https://github.com/SuperInstance/hermes-perception) — The eyes in the rooms
+- [**hermes-avatar**](https://github.com/SuperInstance/hermes-avatar) — The eyes in the rooms
 - [**cns-bridge**](https://github.com/SuperInstance/cns-bridge) — The nervous system connecting rooms
 - [**AI-Writings**](https://github.com/SuperInstance/AI-Writings/tree/main/prose) — The boat's overnight story
