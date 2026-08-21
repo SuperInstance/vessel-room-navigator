@@ -1,11 +1,17 @@
 {
   "name": "vessel-room-navigator",
   "version": "1.0.0",
-  "description": "Your boat as a navigable 3D web space — ScummVM meets Google Street View",
+  "description": "Your boat as a navigable 3D web space \u2014 ScummVM meets Google Street View",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
-  "keywords": ["vessel", "3d", "navigation", "roblox", "fishing"],
+  "keywords": [
+    "vessel",
+    "3d",
+    "navigation",
+    "roblox",
+    "fishing"
+  ],
   "author": "Casey DiGennaro",
   "license": "MIT"
 }
